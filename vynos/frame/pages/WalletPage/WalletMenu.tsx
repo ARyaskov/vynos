@@ -1,16 +1,9 @@
-import * as React from 'react'
-import { Menu, Dropdown, Button, Image } from 'semantic-ui-react'
-import { connect } from 'react-redux'
-import WalletMenuItem from './WalletMenuItem'
-import { FrameState } from '../../redux/FrameState'
-
-const style = require('../../styles/ynos.css')
-
-const SIGN_IN_LOGO = require('../../styles/images/sign-in_logo.svg')
-
-export interface WalletMenuState {
-  isOpen: boolean
-}
+import * as React from "react"
+import { ActionIcon, Burger, Group, Image, Menu, Paper, ScrollArea, Text } from "@mantine/core"
+import { useSelector } from "react-redux"
+import WalletMenuItem from "./WalletMenuItem"
+import type { FrameState } from "../../redux/FrameState"
+import SIGN_IN_LOGO from "../../styles/images/sign-in_logo.svg"
 
 export interface WalletMenuStateProps {
   doLock: () => void
@@ -19,137 +12,72 @@ export interface WalletMenuStateProps {
   currentName: string
 }
 
-export type WalletMenuProps = WalletMenuStateProps
+export type WalletMenuProps = React.PropsWithChildren<object>
 
-export function nameByPath (path: string): string {
+export function nameByPath(path: string): string {
   switch (path) {
-    case '/wallet/channels':
-      return 'Channels'
-    case '/wallet/preferences':
-      return 'Preferences'
-    case '/wallet/network':
-      return 'Network'
+    case "/wallet/channels":
+      return "Channels"
+    case "/wallet/preferences":
+      return "Preferences"
+    case "/wallet/network":
+      return "Network"
     default:
-      return 'Wallet'
+      return "Wallet"
   }
 }
 
-export class WalletMenu extends React.Component<WalletMenuProps, WalletMenuState> {
+export default function WalletMenu({ children }: WalletMenuProps): React.JSX.Element {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const workerProxy = useSelector((state: FrameState) => state.temp.workerProxy)
+  const currentName = useSelector((state: FrameState) => nameByPath(state.shared.rememberPath))
 
-  constructor (props: WalletMenuProps) {
-    super(props)
-    this.state = {
-      isOpen: false
-    }
-  }
-
-  handleLockButton () {
-    this.props.doLock()
-  }
-
-  handleOpenDropdown () {
-    this.setState({
-      isOpen: true
-    })
-  }
-
-  handleCloseDropdown () {
-    this.setState({
-      isOpen: false
-    })
-  }
-
-  renderHamburgerIcon () {
-    return (
-      <div className={`${style.hamburger} ${style.hamburgerSpin} ${this.isActiveClassName()}`}>
-        <div className={style.hamburgerBox}>
-          <div className={style.hamburgerInner} />
-        </div>
-      </div>
-    )
-  }
-
-  isActiveClassName () {
-    return this.state.isOpen ? style.isActive : ''
-  }
-
-  dropdownText () {
-    if (!this.state.isOpen) {
-      return this.props.currentName
-    }
-  }
-
-  renderLogo () {
-    let className = style.menuLogo
-    if (this.state.isOpen) {
-      className = className + ' ' + style.isActive
-    }
-    return (
-      <Image
-        src={SIGN_IN_LOGO}
-        size="mini"
-        centered={true}
-        className={className}
-      />
-    )
-  }
-
-  handleChangeItem (name: string, href: string) {
-    this.props.rememberPath(href)
-  }
-
-  render () {
-    return (
-      <div className={style.walletMenuContainer}>
-        <Menu style={{ margin: 0 }} className={style.walletMenu}>
-          <Menu.Menu className={style.menuIntoOneItemFluid}>
-            <Button
-              icon={true}
-              className={style.btnLock}
-              style={{ order: 2, zIndex: 10, background: 'transparent', width: '65px', margin: '0 0 0 -65px', padding: 0, height: '4rem' }}
-              onClick={this.handleLockButton.bind(this)}
-            >
-              <i className={style.vynosLock}/>
-            </Button>
-            {this.renderLogo()}
-            <Dropdown
-              text={this.dropdownText()}
-              icon={this.renderHamburgerIcon()}
-              id={style.menuItemFluid}
-              pointing={true}
-              className="link"
-              onOpen={this.handleOpenDropdown.bind(this)}
-              onClose={this.handleCloseDropdown.bind(this)}
-            >
-              <Dropdown.Menu className={style.submenuFluid}>
-                <WalletMenuItem name="Wallet" href="/wallet/dashboard" onChange={this.handleChangeItem.bind(this)} />
-                <Dropdown.Divider />
-                <WalletMenuItem name="Channels" href="/wallet/channels" onChange={this.handleChangeItem.bind(this)} />
-                <Dropdown.Divider />
-                <WalletMenuItem name="Preferences" href="/wallet/preferences" onChange={this.handleChangeItem.bind(this)} />
-                <Dropdown.Divider />
-                <WalletMenuItem name="Network" href="/wallet/network" onChange={this.handleChangeItem.bind(this)} />
-              </Dropdown.Menu>
-            </Dropdown>
-          </Menu.Menu>
-        </Menu>
-        {this.props.children}
-      </div>
-    )
-  }
-}
-
-function mapStateToProps (state: FrameState): WalletMenuStateProps {
-  return {
-    doLock: () => {
-      state.temp.workerProxy.doLock()
+  const handleChangeItem = React.useCallback(
+    (_name: string, href: string) => {
+      workerProxy.rememberPage(href)
     },
-    rememberPath: (path: string) => {
-      state.temp.workerProxy.rememberPage(path)
-    },
-    path: state.shared.rememberPath,
-    currentName: nameByPath(state.shared.rememberPath)
-  }
-}
+    [workerProxy]
+  )
 
-export default connect(mapStateToProps)(WalletMenu)
+  return (
+    <div className="vynos-wallet-layout">
+      <Paper withBorder radius={0} p="xs" className="vynos-topbar">
+        <Group justify="space-between" wrap="nowrap">
+          <Menu onOpen={() => setIsOpen(true)} onClose={() => setIsOpen(false)} position="bottom-start" shadow="md">
+            <Menu.Target>
+              <Burger opened={isOpen} size="sm" aria-label="Wallet menu" />
+            </Menu.Target>
+            <Menu.Dropdown>
+              <WalletMenuItem icon={<span className="vynos-menu-badge">W</span>} name="Wallet" href="/wallet/dashboard" onChange={handleChangeItem} />
+              <WalletMenuItem
+                icon={<span className="vynos-menu-badge">C</span>}
+                name="Channels"
+                href="/wallet/channels"
+                onChange={handleChangeItem}
+              />
+              <WalletMenuItem
+                icon={<span className="vynos-menu-badge">P</span>}
+                name="Preferences"
+                href="/wallet/preferences"
+                onChange={handleChangeItem}
+              />
+              <WalletMenuItem icon={<span className="vynos-menu-badge">N</span>} name="Network" href="/wallet/network" onChange={handleChangeItem} />
+            </Menu.Dropdown>
+          </Menu>
+          <Image src={SIGN_IN_LOGO} w={84} />
+          <ActionIcon className="vynos-lock-button" variant="subtle" onClick={() => workerProxy.doLock()} aria-label="Lock wallet" size="lg">
+            <Text size="md" fw={700}>
+              Lock
+            </Text>
+          </ActionIcon>
+        </Group>
+        <Text size="sm" c="dimmed" mt={4} className="vynos-section-title">
+          {currentName}
+        </Text>
+      </Paper>
+      <ScrollArea.Autosize className="vynos-content-scroll" mah="calc(100vh - 96px)" type="auto" scrollbarSize={8} offsetScrollbars>
+        {children}
+      </ScrollArea.Autosize>
+    </div>
+  )
+}

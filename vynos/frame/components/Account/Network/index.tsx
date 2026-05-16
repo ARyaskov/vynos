@@ -1,11 +1,9 @@
-import * as React from 'react'
-import { Container, Form, Radio, Button } from 'semantic-ui-react'
-import SettingStorage from '../../../../lib/storage/SettingStorage'
-import { connect } from 'react-redux'
-import { FrameState } from '../../../redux/FrameState'
-
-const style = require('../../../styles/ynos.css')
-const networks = require('../../../../../data/networks.json')
+import * as React from "react"
+import { Button, Container, Group, Paper, Radio, Stack, Text, TextInput, UnstyledButton } from "@mantine/core"
+import SettingStorage, { type NetworkSetting } from "../../../../lib/storage/SettingStorage"
+import { useSelector } from "react-redux"
+import type { FrameState } from "../../../redux/FrameState"
+import networks from "../../../../../data/networks.json"
 
 export interface NetworkProps {
   changeNetwork: () => void
@@ -17,104 +15,98 @@ export interface NetworkState {
   savedCustomNetwork: string
 }
 
-export class Network extends React.Component<NetworkProps, NetworkState> {
-  settingStorage: SettingStorage
-  networkNames: string[]
+export default function Network(): React.JSX.Element {
+  const changeNetwork = useSelector((state: FrameState) => () => state.temp.workerProxy.changeNetwork())
+  const settingStorage = React.useMemo(() => new SettingStorage(), [])
+  const networkNames = React.useMemo(() => Object.keys(networks), [])
+  const [state, setState] = React.useState<NetworkState>({ value: "0", customNetwork: "", savedCustomNetwork: "" })
 
-  constructor (props: NetworkProps | undefined, context?: any) {
-    super(props!, context)
-    this.settingStorage = new SettingStorage()
-    this.networkNames = []
-    this.state = { value: '0', customNetwork: '', savedCustomNetwork: '' }
-    this.handleChange = this.handleChange.bind(this)
-  }
+  const saveNetwork = React.useCallback(
+    (nextState: NetworkState) => {
+      const network = nextState.value === "Other" ? nextState.customNetwork : nextState.value
+      settingStorage.save("network", network).then(changeNetwork).catch(console.error)
+      setState((prev) => ({ ...prev, savedCustomNetwork: nextState.customNetwork }))
+    },
+    [changeNetwork, settingStorage]
+  )
 
-  async componentDidMount () {
-    for (let name in networks) {
-      this.networkNames.push(name)
+  React.useEffect(() => {
+    const hydrate = async () => {
+      const resultNetwork: NetworkSetting = await settingStorage.getNetwork()
+      if (networkNames.includes(resultNetwork.name)) {
+        setState((prev) => ({ ...prev, value: resultNetwork.name }))
+      } else {
+        setState((prev) => ({
+          ...prev,
+          value: "Other",
+          customNetwork: resultNetwork.value,
+          savedCustomNetwork: resultNetwork.value
+        }))
+      }
     }
-    let resultNetwork: any = await this.settingStorage.getNetwork()
-    let value
-    if (this.networkNames.indexOf(resultNetwork.name) !== -1) {
-      value = resultNetwork.name
-    } else {
-      value = 'Other'
-      this.setState({ customNetwork: resultNetwork.value, savedCustomNetwork: resultNetwork.value })
-    }
-    this.setState({ value: value })
-  }
+    void hydrate()
+  }, [networkNames, settingStorage])
 
-  setRadio (ev: Event, input: HTMLInputElement) {
-    this.setState({ value: input.value }, this.saveNetwork)
-  }
+  const showSaveButton = state.customNetwork !== state.savedCustomNetwork
+  const options = React.useMemo(() => [...networkNames, "Other"], [networkNames])
 
-  saveNetwork () {
-    let network = this.state.value
-    if (this.state.value === 'Other') {
-      network = this.state.customNetwork
-    }
-    this.settingStorage.save('network', network).then(this.props.changeNetwork).catch(console.error)
-    this.setState({ savedCustomNetwork: this.state.customNetwork })
-  }
+  const selectNetwork = React.useCallback(
+    (value: string) => {
+      const nextState = { ...state, value }
+      setState(nextState)
+      saveNetwork(nextState)
+    },
+    [saveNetwork, state]
+  )
 
-  handleChange (event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({ customNetwork: event.target.value })
-  }
-
-  render () {
-    let buttonStyle
-    if (this.state.customNetwork !== this.state.savedCustomNetwork) {
-      buttonStyle = 'inline-block'
-    } else {
-      buttonStyle = 'none'
-    }
-    return (
-      <Container className={style.clearBorder}>
-        <Form className={style.formNetwork} onSubmit={this.saveNetwork.bind(this)}>
-          <Form.Group grouped={true}>
-            {this.networkNames.length && this.networkNames.map((network: string) => {
-              return <Form.Field key={network}>
-                      <Radio
-                        name={'network'}
-                        label={network}
-                        value={network}
-                        onChange={this.setRadio.bind(this)}
-                        checked={this.state.value === network}
-                        style={{ width: '100%' }}
-                      />
-                     </Form.Field>
+  return (
+    <Container p={0}>
+      <Paper withBorder p="md" radius="md">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            saveNetwork(state)
+          }}
+        >
+          <Stack gap="xs">
+            {options.map((network) => {
+              const checked = state.value === network
+              return (
+                <UnstyledButton
+                  key={network}
+                  onClick={() => selectNetwork(network)}
+                  style={{
+                    border: `1px solid ${checked ? "var(--mantine-color-blue-6)" : "var(--mantine-color-gray-3)"}`,
+                    borderRadius: 10,
+                    padding: "10px 12px",
+                    background: checked ? "var(--mantine-color-blue-0)" : "white"
+                  }}
+                >
+                  <Group justify="space-between" wrap="nowrap">
+                    <Text fw={checked ? 600 : 500}>{network}</Text>
+                    <Radio.Indicator checked={checked} />
+                  </Group>
+                </UnstyledButton>
+              )
             })}
-            <Form.Field key={'Other'}>
-              <Radio
-                name={'network'}
-                label={'Other'}
-                value={'Other'}
-                onChange={this.setRadio.bind(this)}
-                checked={this.networkNames.indexOf(this.state.value) === -1}
-                style={{ width: '100%' }}
-              />
-            </Form.Field>
-            <input
-              type="text"
-              placeholder="http://127.0.0.1:8545"
-              onChange={this.handleChange}
-              value={this.state.customNetwork}
-              id={'customNetwork'}
-            />
-            <Button type="submit" content="Save network" primary={true} style={{ marginTop: '30px', display: buttonStyle }} />
-          </Form.Group>
-        </Form>
-      </Container>
-    )
-  }
+            {state.value === "Other" && (
+              <>
+                <TextInput
+                  mt="xs"
+                  type="text"
+                  placeholder="http://127.0.0.1:8545"
+                  onChange={(event) => setState((prev) => ({ ...prev, customNetwork: event.target.value }))}
+                  value={state.customNetwork}
+                  id="customNetwork"
+                />
+                <Button type="submit" disabled={!state.customNetwork} style={{ display: showSaveButton ? "inline-block" : "none" }}>
+                  Save network
+                </Button>
+              </>
+            )}
+          </Stack>
+        </form>
+      </Paper>
+    </Container>
+  )
 }
-
-function mapStateToProps (state: FrameState): NetworkProps {
-  return {
-    changeNetwork: () => {
-      return state.temp.workerProxy.changeNetwork()
-    }
-  }
-}
-
-export default connect(mapStateToProps)(Network)

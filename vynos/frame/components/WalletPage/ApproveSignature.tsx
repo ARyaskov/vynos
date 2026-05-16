@@ -1,29 +1,28 @@
-import * as React from 'react'
-import { Form, Divider } from 'semantic-ui-react'
-import TransactionMeta from '../../../lib/TransactionMeta'
-
-const style = require('../../styles/ynos.css')
+import * as React from "react"
+import { Alert, Divider, Paper, Stack, Text } from "@mantine/core"
+import TransactionMeta from "../../../lib/TransactionMeta"
 
 export interface ApproveSignatureProps {
   transaction: TransactionMeta
 }
 
-export default class ApproveSignature extends React.Component<ApproveSignatureProps> {
-  constructor (props: ApproveSignatureProps) {
-    super(props)
-  }
-
-  render () {
-    return (
-      <Form className={style.encryptionForm} >
-        <Form.Field className={style.clearIndent}>
-          <div className={style.vynosInfo}>Signing this message can have dangerous side effects.
-          Only sign messages from sites you fully trust with your entire account.</div>
-          <label>Address:</label> <div className={style.listDesc}>{this.props.transaction.from}</div>
-          <label>Message:</label> <div className={style.listDesc}>{this.props.transaction.data}</div>
-          </Form.Field>
-        <Divider hidden={true} />
-      </Form>
-    )
-  }
+export default function ApproveSignature({ transaction }: ApproveSignatureProps): React.JSX.Element {
+  return (
+    <Paper withBorder p="md" radius="md">
+      <Stack gap="xs">
+        <Alert color="yellow" variant="light">
+          Signing this message can have dangerous side effects. Only sign messages from sites you fully trust.
+        </Alert>
+        <Text size="sm" c="dimmed">
+          Address
+        </Text>
+        <Text style={{ wordBreak: "break-all" }}>{transaction.from}</Text>
+        <Divider />
+        <Text size="sm" c="dimmed">
+          Message
+        </Text>
+        <Text style={{ wordBreak: "break-all" }}>{transaction.data}</Text>
+      </Stack>
+    </Paper>
+  )
 }

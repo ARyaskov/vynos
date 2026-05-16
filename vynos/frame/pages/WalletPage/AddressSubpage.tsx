@@ -1,87 +1,114 @@
-import * as React from 'react'
-import { Button, Divider } from 'semantic-ui-react'
-import * as qr from 'qr-image'
-
-const style = require('../../styles/ynos.css')
+import * as React from "react"
+import { Button, Divider, Stack, Text, Anchor, Image, Group, Box } from "@mantine/core"
+import QRCode from "qrcode"
 
 export interface AddressSubpageProps {
   address: string
   network: string
-  showSend (): void
+  showSend(): void
 }
 
 export interface AddressSubpageState {
-  copyToClipboardText: string
+  qrDataUri: string
+  refillCopied: boolean
 }
 
-const LABEL_COPY_TO_CLIPBOARD = 'Copy to Clipboard'
-const LABEL_COPIED = 'Copied'
-
 export default class AddressSubpage extends React.Component<AddressSubpageProps, AddressSubpageState> {
-  constructor (props: AddressSubpageProps) {
+  constructor(props: AddressSubpageProps) {
     super(props)
     this.state = {
-      copyToClipboardText: LABEL_COPY_TO_CLIPBOARD
+      qrDataUri: "",
+      refillCopied: false
+    }
+
+    this.onRefill = this.onRefill.bind(this)
+  }
+
+  async componentDidMount() {
+    await this.updateQrCode(this.props.address)
+  }
+
+  async componentDidUpdate(prevProps: AddressSubpageProps) {
+    if (prevProps.address !== this.props.address) {
+      await this.updateQrCode(this.props.address)
     }
   }
 
-  etherscanLink (): string {
+  async updateQrCode(value: string) {
+    if (!value) {
+      this.setState({ qrDataUri: "" })
+      return
+    }
+    const qrDataUri = await QRCode.toDataURL(value, { margin: 1 })
+    this.setState({ qrDataUri })
+  }
+
+  etherscanLink(): string {
     switch (this.props.network) {
-      case 'Ropsten': return `https://ropsten.etherscan.io/address/${this.props.address}`
-      case 'Rinkeby': return `https://rinkeby.etherscan.io/address/${this.props.address}`
-      case 'Main': return `https://etherscan.io/address/${this.props.address}`
-      default: return 'about:blank'
+      case "Sepolia":
+        return `https://sepolia.etherscan.io/address/${this.props.address}`
+      case "Ropsten":
+        return `https://sepolia.etherscan.io/address/${this.props.address}`
+      case "Rinkeby":
+        return `https://sepolia.etherscan.io/address/${this.props.address}`
+      case "Main":
+        return `https://etherscan.io/address/${this.props.address}`
+      default:
+        return "about:blank"
     }
   }
 
-  didCopy () {
-    this.setState({
-      copyToClipboardText: LABEL_COPIED
-    })
-    setTimeout(() => {
-      this.setState({
-        copyToClipboardText: LABEL_COPY_TO_CLIPBOARD
-      })
-    }, 1200)
+  renderQR() {
+    if (!this.state.qrDataUri) {
+      return null
+    }
+    return <Image src={this.state.qrDataUri} alt="Wallet QR code" w={190} h={190} mx="auto" />
   }
 
-  renderQR () {
-    let pngBuffer = qr.imageSync(this.props.address, { type: 'png', margin: 1 }) as Buffer
-    let dataURI = 'data:image/png;base64,' + pngBuffer.toString('base64')
-    return <img className="react-qr" src={dataURI} />
-  }
-
-  renderLink () {
+  renderLink() {
     if (this.props.network) {
-      return <a href={this.etherscanLink()} target="_blank">View on Etherscan</a>
-    } else {
-      return <span>&nbsp;</span>
+      return (
+        <Anchor href={this.etherscanLink()} target="_blank" rel="noreferrer">
+          View on Etherscan
+        </Anchor>
+      )
     }
+    return <Text c="dimmed">No explorer link</Text>
   }
 
-  render () {
+  render() {
     return (
-      <div className={style.walletAddressSubpage}>
-        <div className={style.walletAddressSubpageButtons}>
-          <div className={style.walletAddressSubpageButtonsSingle}>
-            <Button type="submit" content="Refill" className={style.buttonNav} disabled={true} />
-          </div>
-          <div className={style.walletAddressSubpageButtonsSingle}>
-            <Button type="submit" content="Send" className={style.buttonNav} onClick={this.props.showSend.bind(this)} />
-          </div>
-        </div>
-        <Divider hidden={true} />
-        <p className={style.walletAddressSubpageParagraph}>
+      <Stack gap="sm" py="sm">
+        <Group grow>
+          <Button type="button" variant="light" onClick={this.onRefill} disabled={!this.props.address}>
+            {this.state.refillCopied ? "Address copied" : "Refill"}
+          </Button>
+          <Button type="button" onClick={this.props.showSend}>
+            Send
+          </Button>
+        </Group>
+        <Divider variant="dashed" />
+        <Text ta="center" fw={500} style={{ wordBreak: "break-all" }}>
           {this.props.address}
-        </p>
-        <p className={style.walletAddressSubpageParagraph}>
-          {this.renderLink()}
-        </p>
-        <Divider hidden={true} />
-        <p className={style.walletAddressSubpageParagraph}>
-          {this.renderQR()}
-        </p>
-      </div>
+        </Text>
+        <Box ta="center">{this.renderLink()}</Box>
+        <Divider variant="dashed" />
+        <Box ta="center">{this.renderQR()}</Box>
+      </Stack>
     )
+  }
+
+  async onRefill(): Promise<void> {
+    if (!this.props.address) {
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(this.props.address)
+      this.setState({ refillCopied: true })
+      globalThis.setTimeout(() => this.setState({ refillCopied: false }), 1800)
+    } catch (error) {
+      console.error(error)
+    }
+    globalThis.open(this.etherscanLink(), "_blank", "noopener,noreferrer")
   }
 }

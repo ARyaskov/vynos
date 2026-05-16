@@ -1,94 +1,57 @@
-import * as React from 'react'
-import { connect, Dispatch } from 'react-redux'
-import { FrameState } from '../../redux/FrameState'
-import * as actions from '../../redux/actions'
-import { Button, Container, Divider } from 'semantic-ui-react'
-import TermsTextPage from '../TermsTextPage'
-import RestorePage from '../RestorePage'
-import Logo from '../../components/Logo'
-const style = require('../../styles/ynos.css')
+import * as React from "react"
+import { useDispatch } from "react-redux"
+import { Anchor, Button, Container, Divider, Paper, Stack, Text } from "@mantine/core"
+import * as actions from "../../redux/actions"
+import TermsTextPage from "../TermsTextPage"
+import RestorePage from "../RestorePage"
+import Logo from "../../components/Logo"
 
-export interface TermsSubpageDispatchProps {
-  didAcceptTerms?: () => void
+export interface TermsSubpageProps {
   showVerifiable: () => void
 }
-
-export type TermsSubpageProps = TermsSubpageDispatchProps
 
 export interface TermsState {
   displayTermsText: boolean
   displayRestore: boolean
 }
 
-export class Terms extends React.Component<TermsSubpageProps, TermsState> {
-  constructor (props: TermsSubpageProps) {
-    super(props)
-    this.state = {
-      displayTermsText: false,
-      displayRestore: false
-    }
+export default function Terms({ showVerifiable }: TermsSubpageProps): React.JSX.Element {
+  const dispatch = useDispatch()
+  const [state, setState] = React.useState<TermsState>({
+    displayTermsText: false,
+    displayRestore: false
+  })
+
+  if (state.displayTermsText) {
+    return <TermsTextPage goBack={() => setState((prev) => ({ ...prev, displayTermsText: false }))} />
   }
 
-  doDisplayTermsText () {
-    this.setState({
-      displayTermsText: true
-    })
+  if (state.displayRestore) {
+    return <RestorePage goBack={() => setState((prev) => ({ ...prev, displayRestore: false }))} showVerifiable={showVerifiable} />
   }
 
-  doDisplayRestore () {
-    this.setState({
-      displayRestore: true
-    })
-  }
-
-  doneDisplayTermsText () {
-    this.setState({
-      displayTermsText: false
-    })
-  }
-
-  doneDisplayRestorePage () {
-    this.setState({
-      displayRestore: false
-    })
-  }
-
-  render () {
-    if (this.state.displayTermsText) {
-      return <TermsTextPage goBack={this.doneDisplayTermsText.bind(this)}/>
-    }
-
-    if (this.state.displayRestore) {
-      return <RestorePage goBack={this.doneDisplayRestorePage.bind(this)} showVerifiable={this.props.showVerifiable}/>
-    }
-
-    return (
-      <Container textAlign="center" className={`${style.flexContainer} ${style.clearBorder}`}>
-        <Logo />
-        <Divider hidden={true} />
-        <p>
-          Ready to unlock a true value<br/>
-          of quality content<br/>
-          through <em>real</em> micropayments?
-        </p>
-        <Divider hidden={true} />
-        <a className={style.readTerms} onClick={this.doDisplayTermsText.bind(this)} />
-        <Divider hidden={true} />
-        <Button onClick={this.props.didAcceptTerms} content="Accept" primary={true} className={style.buttonNav} />
-        <br />
-        <a onClick={this.doDisplayRestore.bind(this)}>Restore wallet</a>
-      </Container>
-    )
-  }
+  return (
+    <Container size={460} py="xl">
+      <Paper withBorder radius="md" p="lg">
+        <Stack align="center" gap="sm">
+          <Logo />
+          <Divider variant="dashed" w="100%" />
+          <Text ta="center">
+            Ready to unlock a true value
+            <br />
+            of quality content
+            <br />
+            through <em>real</em> micropayments?
+          </Text>
+          <Anchor component="button" onClick={() => setState((prev) => ({ ...prev, displayTermsText: true }))}>
+            Read terms
+          </Anchor>
+          <Button onClick={() => dispatch(actions.didAcceptTerms(true))}>Accept</Button>
+          <Anchor component="button" onClick={() => setState((prev) => ({ ...prev, displayRestore: true }))}>
+            Restore wallet
+          </Anchor>
+        </Stack>
+      </Paper>
+    </Container>
+  )
 }
-
-function mapDispatchToProps (dispatch: Dispatch<FrameState>, props: TermsSubpageDispatchProps): TermsSubpageDispatchProps {
-  return {
-    didAcceptTerms: () => {
-      dispatch(actions.didAcceptTerms(true))
-    },
-    showVerifiable: props.showVerifiable
-  }
-}
-
-export default connect(null, mapDispatchToProps)(Terms)

@@ -1,13 +1,13 @@
-import * as React from 'react'
-import { connect } from 'react-redux'
-import { FrameState } from '../redux/FrameState'
-import InitPage from './InitPage'
-import UnlockPage from './UnlockPage'
-import WalletPage from '../pages/WalletPage'
-import ApprovePage from '../components/WalletPage/ApprovePage'
-import VerifiablePage from '../components/Account/Verifiable/index'
+import * as React from "react"
+import { useSelector } from "react-redux"
+import { FrameState } from "../redux/FrameState"
+import InitPage from "./InitPage"
+import UnlockPage from "./UnlockPage"
+import WalletPage from "../pages/WalletPage"
+import ApprovePage from "../components/WalletPage/ApprovePage"
+import VerifiablePage from "../components/Account/Verifiable/index"
 
-export function isUnlockPageExpected (state: FrameState): boolean {
+export function isUnlockPageExpected(state: FrameState): boolean {
   return !!(state.shared.didInit && state.temp.workerProxy && state.shared.isLocked)
 }
 
@@ -24,59 +24,34 @@ export interface RootStateState {
 
 export type RootContainerProps = RootStateProps
 
-export class RootContainer extends React.Component<RootContainerProps, RootStateState> {
+export function RootContainer(): React.JSX.Element {
+  const [showingVerifiable, setShowingVerifiable] = React.useState(false)
+  const isUnlockExpected = useSelector((state: FrameState) => state.shared.didInit && state.shared.isLocked)
+  const isWalletExpected = useSelector((state: FrameState) => state.shared.didInit && !state.shared.isLocked)
+  const isTransactionPending = useSelector((state: FrameState) => state.shared.didInit && state.shared.isTransactionPending !== 0)
 
-  constructor (props?: RootStateProps | undefined, context?: any) {
-    super(props!, context)
-    this.state = { showingVerifiable: false }
-    this.showVerifiable = this.showVerifiable.bind(this)
-    this.hideVerifiable = this.hideVerifiable.bind(this)
-  }
+  const showVerifiable = React.useCallback(() => {
+    setShowingVerifiable(true)
+  }, [])
 
-  showVerifiable (): void {
-    this.setState({ showingVerifiable: true })
-  }
+  const hideVerifiable = React.useCallback(() => {
+    setShowingVerifiable(false)
+  }, [])
 
-  hideVerifiable (): void {
-    this.setState({ showingVerifiable: false })
-  }
-
-  renderVerifiable () {
-    if (this.state.showingVerifiable) {
-      return <VerifiablePage showVerifiable={this.showVerifiable} hideVerifiable={this.hideVerifiable}/>
-    }
-  }
-
-  renderOther () {
-    if (this.props.isTransactionPending) {
-      return <ApprovePage/>
-    }
-    if (this.props.isUnlockExpected) {
-      return <UnlockPage showVerifiable={this.showVerifiable}/>
-    } else if (this.props.isWalletExpected) {
-      return <WalletPage showVerifiable={this.showVerifiable}/>
-    } else {
-      return <InitPage showVerifiable={this.showVerifiable}/>
-    }
-  }
-
-  render () {
-    return (
-      <div>
-        {this.renderVerifiable()}
-        {this.renderOther()}
-      </div>
-    )
-  }
+  return (
+    <div>
+      {showingVerifiable ? <VerifiablePage showVerifiable={showVerifiable} hideVerifiable={hideVerifiable} /> : null}
+      {isTransactionPending ? (
+        <ApprovePage />
+      ) : isUnlockExpected ? (
+        <UnlockPage showVerifiable={showVerifiable} />
+      ) : isWalletExpected ? (
+        <WalletPage showVerifiable={showVerifiable} />
+      ) : (
+        <InitPage showVerifiable={showVerifiable} />
+      )}
+    </div>
+  )
 }
 
-function mapStateToProps (state: FrameState): RootStateProps {
-  return {
-    isUnlockExpected: state.shared.didInit && state.shared.isLocked,
-    isWalletExpected: state.shared.didInit && !state.shared.isLocked,
-    isTransactionPending: state.shared.didInit && state.shared.isTransactionPending !== 0,
-    isVerifiable: true
-  }
-}
-
-export default connect(mapStateToProps)(RootContainer)
+export default RootContainer

@@ -1,7 +1,7 @@
 interface Message {
   id: number
   type: string
-  payload: any
+  payload: unknown
 }
 
 export default Message

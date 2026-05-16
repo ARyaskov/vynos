@@ -1,5 +1,5 @@
-import StreamProvider from './../lib/StreamProvider'
-import { Duplex } from 'readable-stream'
+import StreamProvider from "./../lib/StreamProvider"
+import { Duplex } from "../lib/duplex"
 import {
   BuyRequest,
   BuyResponse,
@@ -10,125 +10,146 @@ import {
   ListChannelsResponse,
   OpenChannelRequest,
   OpenChannelResponse
-} from '../lib/rpc/yns'
-import { JSONRPC, randomId } from '../lib/Payload'
-import Vynos, { WalletBuyArguments } from '../lib/Vynos'
-import VynosBuyResponse from '../lib/VynosBuyResponse'
-import PurchaseMeta, { purchaseMetaFromDocument } from '../lib/PurchaseMeta'
-import { SharedState } from '../worker/WorkerState'
-import { SharedStateBroadcast, SharedStateBroadcastType } from '../lib/rpc/SharedStateBroadcast'
+} from "../lib/rpc/yns"
+import { JSONRPC, randomId, type ResponsePayload } from "../lib/Payload"
+import Vynos, { WalletBuyArguments } from "../lib/Vynos"
+import VynosBuyResponse from "../lib/VynosBuyResponse"
+import PurchaseMeta, { purchaseMetaFromDocument } from "../lib/PurchaseMeta"
+import { SharedState } from "../worker/WorkerState"
+import { SharedStateBroadcast, SharedStateBroadcastType } from "../lib/rpc/SharedStateBroadcast"
 import {
   buyProcessEvent,
   BuyProcessEventBroadcast,
   buyProcessEventBroadcastType,
   isBuyProcessEventBroadcast
-} from '../lib/rpc/buyProcessEventBroadcast'
-import { default as PromisedWalletResponse } from '../lib/promised'
-import bus from '../lib/bus'
-import { ChannelMeta } from '../lib/storage/ChannelMetaStorage'
-import { PaymentChannel, PaymentChannelSerde } from 'machinomy/lib/PaymentChannel'
-import { DisplayRequestBroadcast, DisplayRequestBroadcastType } from '../lib/rpc/DisplayRequestBroadcast'
+} from "../lib/rpc/buyProcessEventBroadcast"
+import { default as PromisedWalletResponse } from "../lib/promised"
+import bus from "../lib/bus"
+import { ChannelMeta } from "../lib/storage/ChannelMetaStorage"
+import { PaymentChannel, PaymentChannelSerde } from "../lib/paymentChannel"
+import { DisplayRequestBroadcast, DisplayRequestBroadcastType } from "../lib/rpc/DisplayRequestBroadcast"
 
 export default class Client implements Vynos {
   buyProcessCallbacks: Map<string, (args: WalletBuyArguments, tokenOrChannel?: string | ChannelMeta) => void>
   provider: StreamProvider
 
-  constructor (stream: Duplex) {
-    this.provider = new StreamProvider('Client')
+  constructor(stream: Duplex) {
+    this.provider = new StreamProvider("Client")
     this.provider.pipe(stream).pipe(this.provider)
 
     this.buyProcessCallbacks = new Map<string, (args: WalletBuyArguments, tokenOrChannelId?: string | ChannelMeta) => void>()
 
-    bus.on('mc_wallet_buyProcessEvent', (eventName: string, callback: (args: WalletBuyArguments, tokenOrChannelId?: string | ChannelMeta) => void) => {
-      this.addCallbackForBuyProcessEvent(eventName, callback)
-    })
+    bus.on(
+      "mc_wallet_buyProcessEvent",
+      (eventName: string, callback: (args: WalletBuyArguments, tokenOrChannelId?: string | ChannelMeta) => void) => {
+        this.addCallbackForBuyProcessEvent(eventName, callback)
+      }
+    )
   }
 
-  depositToChannel (ch: PaymentChannel): Promise<PaymentChannel> {
+  depositToChannel(ch: PaymentChannel): Promise<PaymentChannel> {
     return Promise.resolve(ch)
   }
 
-  initAccount (): Promise<void> {
+  initAccount(): Promise<void> {
     let request: InitAccountRequest = {
       id: randomId(),
       method: InitAccountRequest.method,
       jsonrpc: JSONRPC,
       params: []
     }
-    return this.provider.ask(request).then((response: InitAccountResponse) => {
+    return this.provider.ask<InitAccountRequest, InitAccountResponse>(request).then(() => {
       return
     })
   }
 
-  openChannel (receiverAccount: string, channelValue: BigNumber.BigNumber): Promise<PaymentChannel> {
+  openChannel(receiverAccount: string, channelValue: number): Promise<PaymentChannel> {
     let request: OpenChannelRequest = {
       id: randomId(),
       method: OpenChannelRequest.method,
       jsonrpc: JSONRPC,
       params: [receiverAccount, channelValue.toString()]
     }
-    return this.provider.ask(request).then((response: OpenChannelResponse) => {
-      return PaymentChannelSerde.instance.deserialize(response.result[0])
+    return this.provider.ask<OpenChannelRequest, OpenChannelResponse>(request).then((response) => {
+      return PaymentChannelSerde.deserialize(response.result[0])
     })
   }
 
-  closeChannel (channelId: string): Promise<void> {
+  closeChannel(channelId: string): Promise<void> {
     let request: CloseChannelRequest = {
       id: randomId(),
       method: CloseChannelRequest.method,
       jsonrpc: JSONRPC,
       params: [channelId]
     }
-    return this.provider.ask<CloseChannelRequest, any>(request)
+    return this.provider.ask<CloseChannelRequest, ResponsePayload>(request).then(() => {
+      return
+    })
   }
 
-  buy (receiver: string, amount: number, gateway: string, meta: string, purchase?: PurchaseMeta, channelValue?: number, tokenContract?: string): Promise<VynosBuyResponse> {
+  buy(
+    receiver: string,
+    amount: number,
+    gateway: string,
+    meta: string,
+    purchase?: PurchaseMeta,
+    channelValue?: number,
+    tokenContract?: string
+  ): Promise<VynosBuyResponse> {
     let _purchase = purchase || purchaseMetaFromDocument(document)
 
     let request: BuyRequest = {
       id: randomId(),
       method: BuyRequest.method,
       jsonrpc: JSONRPC,
-      params: [receiver, amount, gateway, meta, _purchase, channelValue ? channelValue : amount * 10, tokenContract ? tokenContract : '']
+      params: [receiver, amount, gateway, meta, _purchase, channelValue ? channelValue : amount * 10, tokenContract ? tokenContract : ""]
     }
-    return this.provider.ask(request).then((response: BuyResponse) => {
+    return this.provider.ask<BuyRequest, BuyResponse>(request).then((response) => {
       if (response.error) {
         return Promise.reject(response.error)
       } else if (!response.result[0].channelId) {
-        return Promise.reject(response.result[1])
+        return Promise.reject(new Error("Micropayment failed"))
       } else {
         return Promise.resolve(response.result[0])
       }
     })
   }
 
-  buyPromised (receiver: string, amount: number, gateway: string, meta: string, purchase?: PurchaseMeta, channelValue?: number, tokenContract?: string): PromisedWalletResponse {
+  buyPromised(
+    receiver: string,
+    amount: number,
+    gateway: string,
+    meta: string,
+    purchase?: PurchaseMeta,
+    channelValue?: number,
+    tokenContract?: string
+  ): PromisedWalletResponse {
     let promiseBuyResponse = this.buy(receiver, amount, gateway, meta, purchase, channelValue, tokenContract)
     let _purchase = purchase || purchaseMetaFromDocument(document)
     let walletBuyArgs: WalletBuyArguments = new WalletBuyArguments(receiver, amount, gateway, meta, _purchase, channelValue, tokenContract)
-    return new PromisedWalletResponse(this, promiseBuyResponse, 'mc_wallet_buyProcessEvent', walletBuyArgs)
+    return new PromisedWalletResponse(this, promiseBuyResponse, "mc_wallet_buyProcessEvent", walletBuyArgs)
   }
 
-  listChannels (): Promise<Array<PaymentChannel>> {
+  listChannels(): Promise<Array<PaymentChannel>> {
     let request: ListChannelsRequest = {
       id: randomId(),
       method: ListChannelsRequest.method,
       jsonrpc: JSONRPC,
       params: []
     }
-    return this.provider.ask(request).then((response: ListChannelsResponse) => {
-      return response.result.map(pc => PaymentChannelSerde.instance.deserialize(pc))
+    return this.provider.ask<ListChannelsRequest, ListChannelsResponse>(request).then((response) => {
+      return response.result.map((pc) => PaymentChannelSerde.deserialize(pc))
     })
   }
 
-  onSharedStateUpdate (fn: (state: SharedState) => void): void {
-    this.provider.listen<SharedStateBroadcast>(SharedStateBroadcastType, broadcast => {
+  onSharedStateUpdate(fn: (state: SharedState) => void): void {
+    this.provider.listen<SharedStateBroadcast>(SharedStateBroadcastType, (broadcast) => {
       let state = broadcast.result
       fn(state)
     })
   }
 
-  onBuyProcessEventReceived (): void {
+  onBuyProcessEventReceived(): void {
     this.provider.listen<BuyProcessEventBroadcast>(buyProcessEventBroadcastType, (data: BuyProcessEventBroadcast) => {
       if (isBuyProcessEventBroadcast(data)) {
         let walletArgs: WalletBuyArguments = data.result[0]
@@ -148,13 +169,13 @@ export default class Client implements Vynos {
     })
   }
 
-  onDisplayRequest (fn: (isDisplay: boolean) => void): void {
+  onDisplayRequest(fn: (isDisplay: boolean) => void): void {
     this.provider.listen<DisplayRequestBroadcast>(DisplayRequestBroadcastType, (message: DisplayRequestBroadcast) => {
       fn(message.result)
     })
   }
 
-  addCallbackForBuyProcessEvent (event: string, callback: (args: WalletBuyArguments, tokenOrChannelId?: string | ChannelMeta) => void) {
+  addCallbackForBuyProcessEvent(event: string, callback: (args: WalletBuyArguments, tokenOrChannelId?: string | ChannelMeta) => void) {
     this.buyProcessCallbacks.set(event, callback)
   }
 }

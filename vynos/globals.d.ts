@@ -1,24 +1,14 @@
-interface NodeRequireFunction {
-  (id: string): any
-}
-
-interface NodeRequire extends NodeRequireFunction {
-  cache: any
-  main: NodeModule | undefined
-
-  resolve (id: string): string
-}
-
-declare var require: NodeRequire
-
 interface NodeModule {
-  exports: any
-  require: NodeRequireFunction
+  exports: unknown
+  require?: unknown
   id: string
   filename: string
   loaded: boolean
   parent: NodeModule | null
   children: NodeModule[]
+  hot?: {
+    accept: (path: string, callback?: () => void) => void
+  }
 }
 
 interface WindowClient {
@@ -26,10 +16,10 @@ interface WindowClient {
   id: string
   frameType?: string
   type: ClientType
-  postMessage: (message: any, transfer?: any[]) => void
+  postMessage: (message: unknown, transfer?: Transferable[]) => void
 }
 
-type ClientType = 'window' | 'worker' | 'sharedWorker' | 'all'
+type ClientType = "window" | "worker" | "sharedWorker" | "all"
 
 interface ClientsMatchAllOptions {
   includeUncontrolled?: boolean
@@ -44,12 +34,10 @@ interface Clients {
 }
 
 interface ExtendableEvent extends Event {
-  waitUntil<A> (promise: Promise<A>): void
+  waitUntil<A>(promise: Promise<A>): void
 }
 
-interface WorkerGlobalScope extends EventTarget {
-
-}
+interface WorkerGlobalScope extends EventTarget {}
 
 interface ServiceWorkerGlobalScope extends WorkerGlobalScope {
   clients: Clients
@@ -63,14 +51,8 @@ interface ServiceWorkerGlobalScope extends WorkerGlobalScope {
 declare var module: NodeModule
 
 // Same as module.exports
-declare var exports: any
+declare var exports: unknown
 
-declare module 'redux-logger' {
-  import { Middleware } from 'redux'
-
-  export function createLogger (): Middleware
-}
-
-declare module 'jdenticon' {
-  export function update (selector: string, value: string): void
+declare module "jdenticon" {
+  export function update(selector: string, value: string): void
 }

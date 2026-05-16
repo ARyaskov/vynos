@@ -1,58 +1,72 @@
-import * as React from 'react'
-import { Form, Divider } from 'semantic-ui-react'
-import TransactionMeta from '../../../lib/TransactionMeta'
-import Web3 = require('web3')
-
-const style = require('../../styles/ynos.css')
+import * as React from "react"
+import { Divider, Paper, Stack, Text } from "@mantine/core"
+import { formatUnits } from "viem"
+import TransactionMeta from "../../../lib/TransactionMeta"
 
 export interface ApproveTransactionProps {
   transaction: TransactionMeta
 }
 
 export interface ApproveTransactionState {
-  to: string,
+  to: string
   formattedAmount: string
   formattedTotal: string
   formattedFee: string
 }
 
 export default class ApprovePage extends React.Component<ApproveTransactionProps, ApproveTransactionState> {
-  constructor (props: any) {
+  constructor(props: ApproveTransactionProps) {
     super(props)
-
-    this.componentWillReceiveProps()
+    this.state = this.buildStateFromProps(props)
   }
 
-  componentWillReceiveProps () {
-    if (!this.props.transaction.to) {
-      return
+  componentDidUpdate(prevProps: ApproveTransactionProps) {
+    if (prevProps.transaction.id !== this.props.transaction.id) {
+      this.setState(this.buildStateFromProps(this.props))
     }
+  }
 
-    let formattedAmount = new Web3().fromWei(this.props.transaction.amount, 'ether')
-    let formattedFee = new Web3().fromWei(this.props.transaction.fee ? this.props.transaction.fee : 0, 'ether')
-    let amount = parseFloat(formattedAmount)
-    let fee = parseFloat(formattedFee)
-    this.state = {
-      to: this.props.transaction.to,
-      formattedAmount: formattedAmount,
-      formattedFee: formattedFee,
+  private buildStateFromProps(props: ApproveTransactionProps): ApproveTransactionState {
+    const to = props.transaction.to || ""
+    const amountWei = typeof props.transaction.amount === "bigint" ? props.transaction.amount : BigInt(String(props.transaction.amount || 0))
+    const feeWei = typeof props.transaction.fee === "bigint" ? props.transaction.fee : BigInt(String(props.transaction.fee || 0))
+    const formattedAmount = formatUnits(amountWei, 18)
+    const formattedFee = formatUnits(feeWei, 18)
+    const amount = parseFloat(formattedAmount)
+    const fee = parseFloat(formattedFee)
+    return {
+      to,
+      formattedAmount,
+      formattedFee,
       formattedTotal: (amount + fee).toFixed(6)
     }
   }
 
-  render () {
+  render() {
     return (
-      <Form className={style.encryptionForm} >
-        <Form.Field className={style.clearIndent}>
-          <label>To:</label> <div className={style.listDesc}>{this.state.to}</div>
-          <label>Amount:</label> <div>{this.state.formattedAmount}</div>
+      <Paper withBorder p="md" radius="md">
+        <Stack gap="xs">
+          <Text size="sm" c="dimmed">
+            To
+          </Text>
+          <Text style={{ wordBreak: "break-all" }}>{this.state.to}</Text>
           <Divider />
-          <label>Fee:</label> <div>{this.state.formattedFee}</div>
+          <Text size="sm" c="dimmed">
+            Amount
+          </Text>
+          <Text>{this.state.formattedAmount}</Text>
           <Divider />
-          <label>Total:</label> <div>{this.state.formattedTotal}</div>
-        </Form.Field>
-        <Divider hidden={true} />
-      </Form>
+          <Text size="sm" c="dimmed">
+            Fee
+          </Text>
+          <Text>{this.state.formattedFee}</Text>
+          <Divider />
+          <Text size="sm" c="dimmed">
+            Total
+          </Text>
+          <Text fw={600}>{this.state.formattedTotal}</Text>
+        </Stack>
+      </Paper>
     )
   }
 }

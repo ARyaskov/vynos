@@ -1,35 +1,35 @@
-import { JSONRPC, randomId } from '../../vynos/lib/Payload'
+import { JSONRPC, randomId } from "../../vynos/lib/Payload"
 import {
   ClearAccountInfoRequest,
   ClearChannelMetastorageRequest,
-  ClearMachinomyStorageRequest,
+  ClearChannelStorageRequest,
   ClearReduxPersistentStorageRequest,
   ClearTransactionMetastorageRequest,
   GetPrivateKeyHexRequest,
   GetPrivateKeyHexResponse
-} from '../../vynos/lib/rpc/yns'
-import { Duplex } from 'readable-stream'
-import Client from '../../vynos/embed/Client'
+} from "../../vynos/lib/rpc/yns"
+import { Duplex } from "../../vynos/lib/duplex"
+import Client from "../../vynos/embed/Client"
 
 export default class MockingClient extends Client {
-  constructor (stream: Duplex) {
+  constructor(stream: Duplex) {
     super(stream)
   }
 
-  getPrivateKey (): Promise<void> {
+  getPrivateKey(): Promise<void> {
     let request: GetPrivateKeyHexRequest = {
       id: randomId(),
       method: GetPrivateKeyHexRequest.method,
       jsonrpc: JSONRPC,
       params: []
     }
-    return this.provider.ask(request).then((response: GetPrivateKeyHexResponse) => {
-      console.error('getPrivateKey() success')
+    return this.provider.ask<GetPrivateKeyHexRequest, GetPrivateKeyHexResponse>(request).then(() => {
+      console.error("getPrivateKey() success")
       return
     })
   }
 
-  clearTransactionMetastorage (): Promise<void> {
+  clearTransactionMetastorage(): Promise<void> {
     let request: ClearTransactionMetastorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -37,12 +37,12 @@ export default class MockingClient extends Client {
       params: []
     }
     return this.provider.ask(request).then(() => {
-      console.error('clearTransactionMetastorage() success')
+      console.error("clearTransactionMetastorage() success")
       return
     })
   }
 
-  clearChannelMetastorage (): Promise<void> {
+  clearChannelMetastorage(): Promise<void> {
     let request: ClearChannelMetastorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -50,12 +50,12 @@ export default class MockingClient extends Client {
       params: []
     }
     return this.provider.ask(request).then(() => {
-      console.error('clearChannelMetastorage() success')
+      console.error("clearChannelMetastorage() success")
       return
     })
   }
 
-  clearReduxPersistentStorage (): Promise<void> {
+  clearReduxPersistentStorage(): Promise<void> {
     let request: ClearReduxPersistentStorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -63,25 +63,25 @@ export default class MockingClient extends Client {
       params: []
     }
     return this.provider.ask(request).then(() => {
-      console.error('clearReduxPersistentStorage() success')
+      console.error("clearReduxPersistentStorage() success")
       return
     })
   }
 
-  clearMachinomyStorage (): Promise<void> {
-    let request: ClearMachinomyStorageRequest = {
+  clearChannelStorage(): Promise<void> {
+    let request: ClearChannelStorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
-      method: ClearMachinomyStorageRequest.method,
+      method: ClearChannelStorageRequest.method,
       params: []
     }
     return this.provider.ask(request).then(() => {
-      console.error('clearMachinomyStorage() success')
+      console.error("clearChannelStorage() success")
       return
     })
   }
 
-  clearAccountInfo (): Promise<void> {
+  clearAccountInfo(): Promise<void> {
     let request: ClearAccountInfoRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -89,9 +89,8 @@ export default class MockingClient extends Client {
       params: []
     }
     return this.provider.ask(request).then(() => {
-      console.error('clearAccountInfo() success')
+      console.error("clearAccountInfo() success")
       return
     })
   }
-
 }

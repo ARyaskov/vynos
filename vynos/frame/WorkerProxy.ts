@@ -1,8 +1,8 @@
-import StreamProvider from '../lib/StreamProvider'
-import { EventEmitter } from 'events'
-import { SharedState, Preferences } from '../worker/WorkerState'
-import { JSONRPC, randomId } from '../lib/Payload'
-import { isSharedStateBroadcast, SharedStateBroadcastType } from '../lib/rpc/SharedStateBroadcast'
+import StreamProvider from "../lib/StreamProvider"
+import TinyEmitter from "../lib/TinyEmitter"
+import { SharedState, Preferences } from "../worker/WorkerState"
+import { JSONRPC, randomId } from "../lib/Payload"
+import { isSharedStateBroadcast, SharedStateBroadcastType } from "../lib/rpc/SharedStateBroadcast"
 import {
   DidStoreMnemonicRequest,
   GenKeyringRequest,
@@ -28,33 +28,28 @@ import {
   CloseChannelRequest,
   ListChannelsRequest,
   ListChannelsResponse,
-  ClearMachinomyStorageRequest,
+  ClearChannelStorageRequest,
   ClearAccountInfoRequest
-} from '../lib/rpc/yns'
-import { Action } from 'redux'
-import Web3 = require('web3')
-import { PaymentChannel, PaymentChannelSerde } from 'machinomy/lib/PaymentChannel'
+} from "../lib/rpc/yns"
+import { type Action } from "@reduxjs/toolkit"
+import { PaymentChannel, PaymentChannelSerde } from "../lib/paymentChannel"
 
-export default class WorkerProxy extends EventEmitter {
+const REQUEST_TIMEOUT_MS = 30000
+
+export default class WorkerProxy extends TinyEmitter {
   provider: StreamProvider
-  web3: Web3
 
-  constructor () {
+  constructor() {
     super()
-    this.provider = new StreamProvider('WorkerProxy')
-    this.provider.listen(SharedStateBroadcastType, data => {
-      if (isSharedStateBroadcast(data)) {
+    this.provider = new StreamProvider("WorkerProxy")
+    this.provider.listen(SharedStateBroadcastType, (data) => {
+      if (data && typeof data === "object" && isSharedStateBroadcast(data as object)) {
         this.emit(SharedStateBroadcastType, data)
       }
     })
-    this.web3 = new Web3(this.provider)
   }
 
-  getWeb3 (): Web3 {
-    return new Web3(this.provider)
-  }
-
-  doLock (): Promise<void> {
+  doLock(): Promise<void> {
     let request: LockWalletRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -66,67 +61,67 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  doUnlock (password: string): Promise<string | undefined> {
+  doUnlock(password: string): Promise<string | undefined> {
     let request: UnlockWalletRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
       method: UnlockWalletRequest.method,
       params: [password]
     }
-    return this.provider.ask(request).then((response: UnlockWalletResponse) => {
+    return this.provider.ask<UnlockWalletRequest, UnlockWalletResponse>(request).then((response) => {
       return response.error
     })
   }
 
-  genKeyring (password: string): Promise<string> {
+  genKeyring(password: string): Promise<string> {
     let request: GenKeyringRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
       method: GenKeyringRequest.method,
       params: [password]
     }
-    return this.provider.ask(request).then((response: GenKeyringResponse) => {
+    return this.provider.ask<GenKeyringRequest, GenKeyringResponse>(request, REQUEST_TIMEOUT_MS).then((response) => {
       return response.result
     })
   }
 
-  restoreWallet (password: string, type: string, value: string): Promise<string> {
+  restoreWallet(password: string, type: string, value: string): Promise<string> {
     let request: RestoreWalletRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
       method: RestoreWalletRequest.method,
       params: [password, type, value]
     }
-    return this.provider.ask(request).then((response: RestoreWalletResponse) => {
+    return this.provider.ask<RestoreWalletRequest, RestoreWalletResponse>(request, REQUEST_TIMEOUT_MS).then((response) => {
       return response.result
     })
   }
 
-  getSharedState (): Promise<SharedState> {
+  getSharedState(): Promise<SharedState> {
     let request: GetSharedStateRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
       method: GetSharedStateRequest.method,
       params: []
     }
-    return this.provider.ask(request).then((response: GetSharedStateResponse) => {
+    return this.provider.ask<GetSharedStateRequest, GetSharedStateResponse>(request).then((response) => {
       return response.result
     })
   }
 
-  didStoreMnemonic (): Promise<void> {
+  didStoreMnemonic(): Promise<void> {
     let request: DidStoreMnemonicRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
       method: DidStoreMnemonicRequest.method,
       params: []
     }
-    return this.provider.ask(request).then(() => {
+    return this.provider.ask(request, REQUEST_TIMEOUT_MS).then(() => {
       return
     })
   }
 
-  rememberPage (path: string): void {
+  rememberPage(path: string): void {
     let request: RememberPageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -138,7 +133,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  resolveTransaction (): void {
+  resolveTransaction(): void {
     let request: TransactonResolved = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -150,23 +145,23 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  getPrivateKeyHex (): Promise<string> {
+  getPrivateKeyHex(): Promise<string> {
     let request: GetPrivateKeyHexRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
       method: GetPrivateKeyHexRequest.method,
       params: []
     }
-    return this.provider.ask(request).then((response: GetPrivateKeyHexResponse) => {
+    return this.provider.ask<GetPrivateKeyHexRequest, GetPrivateKeyHexResponse>(request).then((response) => {
       return response.result
     })
   }
 
-  dispatch<A extends Action> (action: A) {
-    console.warn('WorkerProxy#dispatch', action)
+  dispatch<A extends Action>(action: A) {
+    console.warn("WorkerProxy#dispatch", action)
   }
 
-  changeNetwork (): Promise<void> {
+  changeNetwork(): Promise<void> {
     let request: ChangeNetworkRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -178,7 +173,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  setPreferences (preferences: Preferences): Promise<void> {
+  setPreferences(preferences: Preferences): Promise<void> {
     let request: SetPreferencesRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -191,7 +186,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  setApproveById (id: string): void {
+  setApproveById(id: string): void {
     let request: SetApproveByIdRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -203,7 +198,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  setRejectById (id: string): void {
+  setRejectById(id: string): void {
     let request: SetRejectByIdRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -215,7 +210,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  clearTransactionMetastorage (): Promise<void> {
+  clearTransactionMetastorage(): Promise<void> {
     let request: ClearTransactionMetastorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -227,7 +222,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  clearChannelMetastorage (): Promise<void> {
+  clearChannelMetastorage(): Promise<void> {
     let request: ClearChannelMetastorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -239,7 +234,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  clearReduxPersistentStorage (): Promise<void> {
+  clearReduxPersistentStorage(): Promise<void> {
     let request: ClearReduxPersistentStorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -251,11 +246,11 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  clearMachinomyStorage (): Promise<void> {
-    let request: ClearMachinomyStorageRequest = {
+  clearChannelStorage(): Promise<void> {
+    let request: ClearChannelStorageRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
-      method: ClearMachinomyStorageRequest.method,
+      method: ClearChannelStorageRequest.method,
       params: []
     }
     return this.provider.ask(request).then(() => {
@@ -263,7 +258,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  clearAccountInfo (): Promise<void> {
+  clearAccountInfo(): Promise<void> {
     let request: ClearAccountInfoRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -275,7 +270,7 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  closeChannel (channelId: string): Promise<void> {
+  closeChannel(channelId: string): Promise<void> {
     let request: CloseChannelRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
@@ -287,15 +282,21 @@ export default class WorkerProxy extends EventEmitter {
     })
   }
 
-  listChannels (): Promise<Array<PaymentChannel>> {
+  listChannels(): Promise<Array<PaymentChannel>> {
     let request: ListChannelsRequest = {
       id: randomId(),
       jsonrpc: JSONRPC,
       method: ListChannelsRequest.method,
       params: []
     }
-    return this.provider.ask(request).then((response: ListChannelsResponse) => {
-      return response.result.map(pc => PaymentChannelSerde.instance.deserialize(pc))
-    })
+    return this.provider
+      .ask<ListChannelsRequest, ListChannelsResponse>(request)
+      .then((response) => {
+        const serializedChannels = Array.isArray(response?.result) ? response.result : []
+        return serializedChannels.map((pc) => PaymentChannelSerde.deserialize(pc))
+      })
+      .catch((_error: unknown) => {
+        return []
+      })
   }
 }

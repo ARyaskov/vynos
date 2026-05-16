@@ -1,9 +1,9 @@
-import * as React from 'react'
-import { connect } from 'react-redux'
-import { FrameState } from '../../redux/FrameState'
-import Terms from './Terms'
-import Password from './Password'
-import Mnemonic from './Mnemonic'
+import * as React from "react"
+import { connect } from "react-redux"
+import { FrameState } from "../../redux/FrameState"
+import Terms from "./Terms"
+import Password from "./Password"
+import Mnemonic from "./Mnemonic"
 
 export interface InitPageProps {
   needAcceptTerms?: boolean
@@ -13,7 +13,7 @@ export interface InitPageProps {
   showVerifiable: () => void
 }
 
-const InitPage: React.SFC<InitPageProps> = (props) => {
+const InitPage: React.FC<InitPageProps> = (props) => {
   if (props.needAcceptTerms) {
     return <Terms showVerifiable={props.showVerifiable} />
   } else if (props.needSetPassword) {
@@ -25,7 +25,7 @@ const InitPage: React.SFC<InitPageProps> = (props) => {
   }
 }
 
-function mapStateToProps (state: FrameState, props: InitPageProps): InitPageProps {
+function mapStateToProps(state: FrameState, props: InitPageProps): InitPageProps {
   return {
     needAcceptTerms: !state.temp.initPage.didAcceptTerms,
     needSetPassword: !state.temp.initPage.mnemonic,

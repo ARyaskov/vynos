@@ -1,11 +1,11 @@
-import * as React from 'react'
-import WalletMenu, { nameByPath } from './WalletMenu'
-import { FrameState } from '../../redux/FrameState'
-import { connect } from 'react-redux'
-import DashboardSubpage from './DashboardSubpage'
-import Channels from '../../components/Account/Channels/index'
-import Network from '../../components/Account/Network/index'
-import Preferences from '../../components/Account/Preferences/index'
+import * as React from "react"
+import WalletMenu, { nameByPath } from "./WalletMenu"
+import { FrameState } from "../../redux/FrameState"
+import { useSelector } from "react-redux"
+import DashboardSubpage from "./DashboardSubpage"
+import Channels from "../../components/Account/Channels/index"
+import Network from "../../components/Account/Network/index"
+import Preferences from "../../components/Account/Preferences/index"
 
 export interface WalletPageStateProps {
   path?: string
@@ -17,41 +17,26 @@ export interface WalletPageState {
   sendShown: boolean
 }
 
-export class WalletPage extends React.Component<WalletPageStateProps, WalletPageState> {
+export function WalletPage({ showVerifiable }: WalletPageStateProps): React.JSX.Element {
+  const name = useSelector((state: FrameState) => nameByPath(state.shared.rememberPath))
 
-  constructor (props: any) {
-    super(props)
-    this.state = { sendShown: false }
+  let content: React.JSX.Element
+  switch (name) {
+    case "Channels":
+      content = <Channels />
+      break
+    case "Preferences":
+      content = <Preferences showVerifiable={showVerifiable} />
+      break
+    case "Network":
+      content = <Network />
+      break
+    default:
+      content = <DashboardSubpage />
+      break
   }
 
-  renderSubpage () {
-    switch (this.props.name) {
-      case 'Channels':
-        return <Channels />
-      case 'Preferences':
-        return <Preferences showVerifiable={this.props.showVerifiable} />
-      case 'Network':
-        return <Network />
-      default:
-        return <DashboardSubpage />
-    }
-  }
-
-  render () {
-    return (
-      <WalletMenu>
-        {this.renderSubpage()}
-      </WalletMenu>
-    )
-  }
+  return <WalletMenu>{content}</WalletMenu>
 }
 
-function mapStateToProps (state: FrameState, props: WalletPageStateProps): WalletPageStateProps {
-  return {
-    path: state.shared.rememberPath,
-    name: nameByPath(state.shared.rememberPath),
-    showVerifiable: props.showVerifiable
-  }
-}
-
-export default connect(mapStateToProps)(WalletPage)
+export default WalletPage

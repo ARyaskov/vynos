@@ -1,9 +1,7 @@
-import * as React from 'react'
-import { connect } from 'react-redux'
-import { FrameState } from '../../../redux/FrameState'
-import { Menu } from 'semantic-ui-react'
-
-const style = require('../../../styles/ynos.css')
+import * as React from "react"
+import { connect } from "react-redux"
+import { FrameState } from "../../../redux/FrameState"
+import { Anchor, Button, Container, Paper, Stack, Text, Title } from "@mantine/core"
 
 export interface VerifiablePageProps {
   showVerifiable: () => void
@@ -17,62 +15,58 @@ export interface VerifiablePageState {
 export class VerifiablePage extends React.Component<VerifiablePageProps, VerifiablePageState> {
   win: Window | null
 
-  constructor (props: VerifiablePageProps) {
+  constructor(props: VerifiablePageProps) {
     super(props)
-    let randNumber = VerifiablePage.getRandomNumber(1000, 9999)
-    localStorage.setItem('randNumber', randNumber.toString())
+    const randNumber = VerifiablePage.getRandomNumber(1000, 9999)
+    localStorage.setItem("randNumber", randNumber.toString())
     this.state = { randNumber }
     this.win = null
   }
 
-  static getRandomNumber (min: number, max: number): number {
+  static getRandomNumber(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min) + min)
   }
 
-  show () {
-    this.win = window.open('/check.html', '', 'width=300,height=200')
-    this.win!.onbeforeunload = () => {
-      this.props.hideVerifiable()
+  show() {
+    this.win = window.open("/check.html", "", "width=300,height=200")
+    if (this.win) {
+      this.win.onbeforeunload = () => {
+        this.props.hideVerifiable()
+      }
     }
   }
 
-  menu () {
-    return (
-      <Menu
-        className={style.clearBorder}
-        style={{ zIndex: 10 }}
-      >
-        <Menu.Item
-          link={true}
-          className={style.menuIntoOneItemFluid}
-          onClick={this.props.hideVerifiable}
-        >
-          <i className={style.vynosArrowBack}/> Verify Vynos
-        </Menu.Item>
-      </Menu>
-    )
-  }
-
-  componentWillUnmount () {
+  componentWillUnmount() {
     if (this.win && !this.win.closed) {
       this.win.close()
     }
-    localStorage.removeItem('randNumber')
+    localStorage.removeItem("randNumber")
   }
 
-  render () {
+  render() {
     return (
-      <div id={style.verifiableBlock}>
-        {this.menu()}
-        <div id={style.verifiableText}>Please, click link below, compare numbers - they must be equal</div>
-        <div id={style.verifiableRandNumber}>{this.state.randNumber}</div>
-        <div><a onClick={this.show.bind(this)}>Verify authenticity Vynos</a></div>
-      </div>
+      <Container size={520} py="xl">
+        <Button variant="subtle" onClick={this.props.hideVerifiable} mb="sm">
+          {"<-"} Verify Vynos
+        </Button>
+        <Paper withBorder p="lg" radius="md">
+          <Stack align="center" gap="sm">
+            <Title order={3}>Authenticity Check</Title>
+            <Text ta="center">Please click the link below and compare numbers, they must be equal.</Text>
+            <Text fw={800} size="xl">
+              {this.state.randNumber}
+            </Text>
+            <Anchor component="button" onClick={this.show.bind(this)}>
+              Verify authenticity Vynos
+            </Anchor>
+          </Stack>
+        </Paper>
+      </Container>
     )
   }
 }
 
-function mapStateToProps (state: FrameState, props: VerifiablePageProps): VerifiablePageProps {
+function mapStateToProps(_state: FrameState, props: VerifiablePageProps): VerifiablePageProps {
   return {
     showVerifiable: props.showVerifiable,
     hideVerifiable: props.hideVerifiable

@@ -1,142 +1,141 @@
-import Datastore = require('nedb')
-import TransactionMeta from '../TransactionMeta'
-import TransactionState from '../TransactionState'
-import Storage from '../Storage'
-import bus from '../../lib/bus'
-import * as events from '../events'
+import localforage from "localforage"
+import TransactionMeta from "../TransactionMeta"
+import TransactionState from "../TransactionState"
+import bus from "../../lib/bus"
+import * as events from "../events"
+import { default as SettingStorage } from "./SettingStorage"
+import { VYNOS_DB_NAME, VYNOS_DB_VERSION } from "./dbConfig"
+
+type TransactionMap = Record<string, TransactionMeta>
+
+const transactionsStore = localforage.createInstance({
+  name: VYNOS_DB_NAME,
+  version: VYNOS_DB_VERSION,
+  storeName: "transactions"
+})
+
+const settingStorage = new SettingStorage()
 
 export default class TransactionMetaStorage {
-  datastore: Promise<Datastore>
+  private networkName: string = ""
 
-  private d: Storage | undefined
-
-  constructor () {
-    this.d = new Storage('transactions')
-    this.datastore = this.d.ready()
+  private async ensureNetworkName(): Promise<string> {
+    if (this.networkName) {
+      return this.networkName
+    }
+    const network = await settingStorage.getNetwork()
+    this.networkName = network.name
+    return this.networkName
   }
 
-  add (transaction: TransactionMeta): Promise<TransactionMeta> {
-    return new Promise((resolve, reject) => {
-      this.datastore.then((datastore) => {
-        datastore.insert(transaction, (err: Error) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(transaction)
-          }
-        })
-      })
+  private async storageKey(): Promise<string> {
+    const networkName = await this.ensureNetworkName()
+    return `transactions_${networkName}`
+  }
+
+  private async loadMap(): Promise<TransactionMap> {
+    const key = await this.storageKey()
+    return (await transactionsStore.getItem<TransactionMap>(key)) || {}
+  }
+
+  private async saveMap(value: TransactionMap): Promise<void> {
+    const key = await this.storageKey()
+    await transactionsStore.setItem(key, value)
+  }
+
+  async add(transaction: TransactionMeta): Promise<TransactionMeta> {
+    const transactions = await this.loadMap()
+    transactions[transaction.id] = transaction
+    await this.saveMap(transactions)
+    return transaction
+  }
+
+  async byId(id: string): Promise<TransactionMeta | null> {
+    const transactions = await this.loadMap()
+    return transactions[id] || null
+  }
+
+  pending(): Promise<Array<TransactionMeta>> {
+    return this.find({ state: TransactionState.PENDING.toString() })
+  }
+
+  approved(): Promise<Array<TransactionMeta>> {
+    return this.find({ state: TransactionState.APPROVED.toString() })
+  }
+
+  view(id: string) {
+    return this.update({ id }, { $set: { state: "VIEWED" } })
+  }
+
+  approve(id: string) {
+    return this.update({ id }, { $set: { state: "APPROVED" } }).then((array) => {
+      bus.emit(events.txApproved(id))
+      return array
     })
   }
 
-  byId (id: string): Promise<TransactionMeta | null> {
-    return new Promise((resolve, reject) => {
-      this.datastore.then((datastore) => {
-        datastore.loadDatabase(() => {
-          datastore.findOne<TransactionMeta>({ id: id }, (err: Error, transaction: any) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(transaction)
-            }
-          })
-        })
-      })
+  reject(id: string) {
+    return this.update({ id }, { $set: { state: "REJECTED" } }).then((array) => {
+      bus.emit(events.txRejected(id))
+      return array
     })
   }
 
-  pending (): Promise<Array<TransactionMeta>> {
-    let query = { state: TransactionState.PENDING.toString() }
-    return this.find(query)
+  async update(query: Record<string, unknown>, update: { $set?: Partial<TransactionMeta> }): Promise<Array<TransactionMeta>> {
+    const transactions = await this.loadMap()
+    const changed: TransactionMeta[] = []
+
+    const patch = update.$set || {}
+    for (const tx of Object.values(transactions)) {
+      if (this.matches(tx, query)) {
+        Object.assign(tx, patch)
+        changed.push(tx)
+      }
+    }
+
+    await this.saveMap(transactions)
+    return changed
   }
 
-  approved (): Promise<Array<TransactionMeta>> {
-    let query = { state: TransactionState.APPROVED.toString() }
-    return this.find(query)
+  all(): Promise<Array<TransactionMeta>> {
+    return this.find({})
   }
 
-  view (id: string) {
-    return this.update({ id }, { '$set': { state: 'VIEWED' } })
-  }
-
-  approve (id: string) {
-    return this.update({ id }, { '$set': { state: 'APPROVED' } })
-      .then(array => {
-        let eventName = events.txApproved(id)
-        bus.emit(eventName)
-        return array
+  clear(cb: () => void) {
+    this.saveMap({})
+      .then(() => cb())
+      .catch((error) => {
+        console.error("Error while deleting transactions local database")
+        console.error(error)
+        cb()
       })
   }
 
-  reject (id: string) {
-    return this.update({ id }, { '$set': { state: 'REJECTED' } })
-      .then(array => {
-        let eventName = events.txRejected(id)
-        bus.emit(eventName)
-        return array
-      })
+  async changeNetwork(): Promise<void> {
+    const network = await settingStorage.getNetwork()
+    this.networkName = network.name
   }
 
-  update (query: object, update: object): Promise<Array<TransactionMeta>> {
-    return new Promise((resolve: Function, reject: Function) => {
-      this.datastore.then((datastore) => {
-        datastore.update(query, update, { multi: true }, (err: Error, res: any) => {
-          datastore.persistence.compactDatafile()
-          if (err) {
-            return reject(err)
-          }
-          resolve(res)
-        })
-      })
-    })
+  protected async find(query: Record<string, unknown>): Promise<Array<TransactionMeta>> {
+    const transactions = await this.loadMap()
+    return Object.values(transactions)
+      .filter((transaction) => this.matches(transaction, query))
+      .sort((left, right) => left.time - right.time)
   }
 
-  all (): Promise<Array<TransactionMeta>> {
-    return new Promise((resolve, reject) => {
-      this.datastore.then((datastore) => {
-        datastore.loadDatabase(() => {
-          this.find({}).then(transactions => {
-            return resolve(transactions)
-          })
-        })
-      })
-    })
-  }
+  private matches(candidate: TransactionMeta, query: Record<string, unknown>): boolean {
+    const entries = Object.entries(query)
+    if (entries.length === 0) {
+      return true
+    }
 
-  clear (cb: () => void) {
-    this.datastore.then(datastore => {
-      // https://github.com/louischatriot/nedb/issues/84
-      datastore.remove({ }, { multi: true }, function (err, numRemoved) {
-        datastore.loadDatabase(function (err) {
-          if (err) {
-            console.error('Error while deleting transactions local database')
-            console.error(err)
-          }
-          cb()
-        })
-      })
-    })
-  }
+    for (const [key, expected] of entries) {
+      const value = (candidate as unknown as Record<string, unknown>)[key]
+      if (value !== expected) {
+        return false
+      }
+    }
 
-  changeNetwork (): Promise<void> {
-    return new Promise(() => {
-      this.d!.load().then(() => {
-        this.datastore = this.d!.ready()
-      })
-    })
-  }
-
-  protected find (query: any): Promise<Array<TransactionMeta>> {
-    return new Promise((resolve, reject) => {
-      this.datastore.then((datastore) => {
-        datastore.find<TransactionMeta>(query).sort({ time: 1 }).exec((err, transactions) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(transactions)
-          }
-        })
-      })
-    })
+    return true
   }
 }

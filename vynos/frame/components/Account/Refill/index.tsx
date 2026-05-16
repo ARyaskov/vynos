@@ -1,31 +1,25 @@
-import * as React from 'react'
-import { Container, Menu, List, Button } from 'semantic-ui-react'
-const style = require('../../../styles/ynos.css')
+import * as React from "react"
+import { Button, Container, Group, Paper, Stack, Text, Title } from "@mantine/core"
 
-const Refill: React.SFC<any> = (props) => {
+const Refill: React.FC = () => {
   return (
-    <div>
-      <Menu className={style.clearBorder}>
-          <Menu.Item link={true} className={style.menuIntoOneItemFluid}><i className={style.vynosArrowBack}/>Refill</Menu.Item>
-      </Menu>
-      <Container>
-          <List>
-              <List.Item>
-                  <List.Header>Using US dollars</List.Header>
-                  <span>for US citizens only</span>
-                  <p className={style.buttonNav}>
-                      <Button content="Via coinbase" primary={true} />
-                  </p>
-              </List.Item>
-              <List.Item>
-                  <List.Header>Using cryptocurrency</List.Header>
-                  <p className={style.buttonNav}>
-                      <Button content="Via changelly" primary={true} />
-                  </p>
-              </List.Item>
-          </List>
-      </Container>
-  </div>
+    <Container py="md">
+      <Paper withBorder p="md" radius="md">
+        <Stack>
+          <Title order={4}>Using US dollars</Title>
+          <Text size="sm" c="dimmed">
+            For US citizens only
+          </Text>
+          <Group>
+            <Button variant="light">Via Coinbase</Button>
+          </Group>
+          <Title order={4}>Using cryptocurrency</Title>
+          <Group>
+            <Button variant="light">Via Changelly</Button>
+          </Group>
+        </Stack>
+      </Paper>
+    </Container>
   )
 }
 

@@ -8,22 +8,24 @@ export default interface PurchaseMeta {
   origin: string
 }
 
-function openGraph (attribute: string, document: HTMLDocument): string {
-  let metaTag = document.querySelector('meta[property="og:' + attribute + '"]')
-  if (metaTag) {
-    return metaTag.getAttribute('content') || ''
-  } else {
-    return ''
+function openGraph(attribute: string, document: HTMLDocument): string {
+  const targetProperty = `og:${attribute}`
+  const metaTags = document.getElementsByTagName("meta")
+  for (const metaTag of Array.from(metaTags)) {
+    if (metaTag.getAttribute("property") === targetProperty) {
+      return metaTag.getAttribute("content") || ""
+    }
   }
+  return ""
 }
 
-function appleTouchIcon (document: HTMLDocument): string | undefined {
-  let links = [].slice.call(document.querySelectorAll('link')) as Array<HTMLLinkElement>
-  let icons = links.filter(link => /apple-touch-icon/.test(link.rel))
+function appleTouchIcon(document: HTMLDocument): string | undefined {
+  let links = Array.from(document.getElementsByTagName("link")) as Array<HTMLLinkElement>
+  let icons = links.filter((link) => /apple-touch-icon/.test(link.rel))
   if (icons.length) {
     let maxSize = icons.reduce((acc, link) => {
-      let size = parseInt(link.getAttribute('sizes') as string, 10) || 0
-      if (size > parseInt(acc.getAttribute('sizes') as string, 10)) {
+      let size = parseInt(link.getAttribute("sizes") as string, 10) || 0
+      if (size > parseInt(acc.getAttribute("sizes") as string, 10)) {
         return link
       } else {
         return acc
@@ -33,23 +35,21 @@ function appleTouchIcon (document: HTMLDocument): string | undefined {
   }
 }
 
-function icon (document: HTMLDocument): string | undefined {
-  let links = [].slice.call(document.querySelectorAll('link')) as Array<HTMLLinkElement>
-  let found = links.find(link => {
-    return /icon/.test(link.rel) &&
-      (!link.type || link.type !== 'image/x-icon') &&
-      !(/shortcut/.test(link.rel)) &&
-      (/\.png|\.jpg/.test(link.href))
+function icon(document: HTMLDocument): string | undefined {
+  let links = Array.from(document.getElementsByTagName("link")) as Array<HTMLLinkElement>
+  let found = links.find((link) => {
+    return /icon/.test(link.rel) && (!link.type || link.type !== "image/x-icon") && !/shortcut/.test(link.rel) && /\.png|\.jpg/.test(link.href)
   })
   if (found) {
     return found.href
   }
 }
 
-function openGraphIcon (document: HTMLDocument): string | undefined {
-  let ogLinks = [].slice.call(document.querySelectorAll('meta[property=\'og:image\']')) as Array<HTMLMetaElement>
+function openGraphIcon(document: HTMLDocument): string | undefined {
+  const metaTags = Array.from(document.getElementsByTagName("meta")) as Array<HTMLMetaElement>
+  let ogLinks = metaTags.filter((metaTag) => metaTag.getAttribute("property") === "og:image")
   if (ogLinks.length) {
-    let found = ogLinks.find(link => {
+    let found = ogLinks.find((link) => {
       return /logo|icon/.test(link.content)
     })
     if (found) {
@@ -60,11 +60,11 @@ function openGraphIcon (document: HTMLDocument): string | undefined {
   }
 }
 
-export function purchaseMetaFromDocument (document: HTMLDocument): PurchaseMeta {
+export function purchaseMetaFromDocument(document: HTMLDocument): PurchaseMeta {
   return {
-    title: openGraph('title', document),
-    description: openGraph('description', document),
-    siteName: openGraph('site_name', document),
+    title: openGraph("title", document),
+    description: openGraph("description", document),
+    siteName: openGraph("site_name", document),
     url: document.location.href,
     origin: document.location.origin,
     icon: openGraphIcon(document),

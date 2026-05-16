@@ -1,26 +1,26 @@
-export const JSONRPC: string = '2.0'
+export const JSONRPC: string = "2.0"
 
 export interface Payload {
   id: number | string
   jsonrpc: string
   method?: string
-  params?: any[]
+  params?: unknown
 }
 
 export default Payload
 
 export interface RequestPayload extends Payload {
   method: string
-  params: any
+  params: unknown
 }
 
 export interface ResponsePayload extends Payload {
-  result: any
+  result: unknown
   error?: string
 }
 
 const EXTRA_DIGITS = 3
-export function randomId () {
+export function randomId() {
   const datePart = new Date().getTime() * Math.pow(10, EXTRA_DIGITS)
   // 3 random digits
   const extraPart = Math.floor(Math.random() * Math.pow(10, EXTRA_DIGITS))

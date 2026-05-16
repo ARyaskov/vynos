@@ -1,7 +1,7 @@
-import { Duplex } from 'readable-stream'
-import { RequestPayload, Payload } from './Payload'
+import { Duplex } from "./duplex"
+import { RequestPayload, Payload } from "./Payload"
 
-export type EndFunction = <A extends Payload>(error: null, response?: A) => void
+export type EndFunction = <A extends Payload>(error: Error | null, response?: A) => void
 export type Handler = (message: Payload, next: Function, end: EndFunction) => void
 
 export default class StreamServer extends Duplex {
@@ -9,26 +9,26 @@ export default class StreamServer extends Duplex {
   verbose: boolean
   name: string
 
-  constructor (name?: string, verbose: boolean = false) {
+  constructor(name?: string, verbose: boolean = false) {
     super({ objectMode: true })
     this._handlers = []
-    this.name = `StreamServer at ${name}` || 'StreamServer'
+    this.name = `StreamServer at ${name}` || "StreamServer"
     this.verbose = verbose
   }
 
-  add (handler: Handler): this {
+  add(handler: Handler): this {
     this._handlers.push(handler)
     return this
   }
 
-  handle<A extends Payload> (payload: A) {
-    const end = <A extends Payload> (error: null, response?: A) => {
-      if (error) {
+  handle<A extends Payload>(payload: A) {
+    const end: EndFunction = (error, response) => {
+      if (error !== null) {
         console.error(error)
         this.push({
           id: payload.id,
           jsonrpc: payload.jsonrpc,
-          error: (error || '').toString()
+          error: error.toString()
         })
       } else {
         if (response) {
@@ -41,7 +41,11 @@ export default class StreamServer extends Duplex {
       let head = (handlers || [])[0]
       let next = () => nextHandler((handlers || []).slice(1))
       if (head) {
-        head(payload, next, end)
+        try {
+          head(payload, next, end)
+        } catch (error) {
+          end(error instanceof Error ? error : new Error(String(error)))
+        }
       } else {
         if (this.verbose) {
           console.log(`${this.name}: No response for message`, payload)
@@ -52,11 +56,11 @@ export default class StreamServer extends Duplex {
     nextHandler(this._handlers)
   }
 
-  _read (n: number) {
+  _read(n: number) {
     // Do Nothing
   }
 
-  _write<A extends RequestPayload> (payload: A, encoding: string, next: Function) {
+  _write<A extends RequestPayload>(payload: A, encoding: string, next: Function) {
     this.handle(payload)
     next()
   }

@@ -1,7 +1,12 @@
-import Datastore = require('nedb')
-
-const networks = require('../../../data/networks.json')
-const DEFAULT_NETWORK = 'Ropsten'
+import localforage from "localforage"
+import networks from "../../../data/networks.json"
+import { VYNOS_DB_NAME, VYNOS_DB_VERSION } from "./dbConfig"
+const DEFAULT_NETWORK = "Sepolia"
+const NETWORKS: Record<string, string> = networks as Record<string, string>
+const LEGACY_NETWORK_ALIASES: Record<string, string> = {
+  Ropsten: "Sepolia",
+  Rinkeby: "Sepolia"
+}
 
 export interface Setting {
   name: string
@@ -13,80 +18,34 @@ export interface NetworkSetting {
   value: string
 }
 
-/**
- * Database layer for {MetaChannel}
- */
+const settingsStore = localforage.createInstance({
+  name: VYNOS_DB_NAME,
+  version: VYNOS_DB_VERSION,
+  storeName: "settings"
+})
+
 export default class SettingStorage {
-  datastore: Datastore
-
-  constructor () {
-    this.datastore = new Datastore({ filename: 'SettingStorage', autoload: true })
+  async save(name: string, value: string): Promise<void> {
+    await settingsStore.setItem(name, value)
   }
 
-  save (name: string, value: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.get(name).then(res => {
-        if (res) {
-          this.datastore.update({ name }, { $set: { value } }, {}, (err: Error) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve()
-            }
-          })
-        } else {
-          this.datastore.insert<Setting>({ name, value }, (err: Error) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve()
-            }
-          })
-        }
-      })
-    })
+  async get(name: string): Promise<Setting | null> {
+    const value = await settingsStore.getItem<string>(name)
+    if (value === null || value === undefined) {
+      return null
+    }
+    return { name, value }
   }
 
-  get (name: string): Promise<Setting | null> {
-    return new Promise((resolve, reject) => {
-      this.datastore.loadDatabase(() => {
-        this.datastore.findOne<Setting>({ name }, (err: Error, value: any) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(value)
-          }
-        })
-      })
-    })
-  }
+  async getNetwork(): Promise<NetworkSetting> {
+    const networkSetting = await this.get("network")
+    const rawNetworkName = networkSetting?.value || DEFAULT_NETWORK
+    const networkName = LEGACY_NETWORK_ALIASES[rawNetworkName] || rawNetworkName
+    const networkValue = NETWORKS[networkName] || networkName
 
-  getNetwork (): Promise<NetworkSetting> {
-    return new Promise((resolve, reject) => {
-      this.datastore.loadDatabase(() => {
-        this.datastore.findOne<Setting>({ name: 'network' }, (err: Error, res: any) => {
-          if (err) {
-            reject(err)
-          } else {
-            let network
-            let networkValue
-
-            if (!res) {
-              network = DEFAULT_NETWORK
-            } else {
-              network = res.value
-            }
-
-            if (!networks[network]) {
-              networkValue = network
-            } else {
-              networkValue = networks[network]
-            }
-
-            resolve({ name: network, value: networkValue })
-          }
-        })
-      })
-    })
+    return {
+      name: networkName,
+      value: networkValue
+    }
   }
 }

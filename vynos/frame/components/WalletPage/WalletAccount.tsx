@@ -1,143 +1,133 @@
-import * as React from 'react'
-import { connect } from 'react-redux'
-import * as Web3 from 'web3'
-import { FrameState } from '../../redux/FrameState'
-import * as BigNumber from 'bignumber.js'
-import Currency from '../../lib/Currency'
-import pify from '../../../lib/pify'
-import { IconGenerator } from '../IconGenerator'
-
-const style = require('../../styles/ynos.css')
+import * as React from "react"
+import { connect } from "react-redux"
+import { createPublicClient, formatUnits, getAddress, http } from "viem"
+import { Box, Group, Paper, Stack, Text } from "@mantine/core"
+import { FrameState } from "../../redux/FrameState"
+import Currency from "../../lib/Currency"
+import { IconGenerator } from "../IconGenerator"
+import SettingStorage from "../../../lib/storage/SettingStorage"
+import WorkerProxy from "../../WorkerProxy"
 
 export interface WalletAccountProps {
-  web3?: Web3
   onChangeAddress?: (address: string) => void
   onChangeDetailsDisplayed?: (value: boolean) => void
   onChangeBalance?: (balance: number) => void
   displayCurrencyCode?: string
+  workerProxy?: WorkerProxy
+  lastUpdateDb?: number
 }
 
-export interface WalletAccountState {
-  address: string | null
-  balance: string
-  displayedBalance: string
-  isDetailsDisplayed: boolean
-}
+function WalletAccountView(props: WalletAccountProps) {
+  const [isDetailsDisplayed, setIsDetailsDisplayed] = React.useState(false)
+  const [address, setAddress] = React.useState("")
+  const [displayedBalance, setDisplayedBalance] = React.useState("0")
+  const settingStorage = React.useMemo(() => new SettingStorage(), [])
 
-export class WalletAccount extends React.Component<WalletAccountProps, WalletAccountState> {
-  updateBalanceTimer: any
+  React.useEffect(() => {
+    let cancelled = false
 
-  constructor (props: any) {
-    super(props)
-    this.state = {
-      address: null,
-      balance: '0',
-      displayedBalance: '0',
-      isDetailsDisplayed: false
-    }
-  }
-
-  async componentWillMount () {
-    const accounts = await pify<string[]>((cb: (error: Error, accounts: string[]) => void) => {
-      this.props.web3!.eth.getAccounts(cb)
-    })
-
-    // tslint:disable-next-line:strict-type-predicates
-    if (accounts !== undefined) {
-      const address = accounts[0]
-      this.setState({ ...this.state, address: address })
-    }
-  }
-
-  componentDidMount () {
-    if (this.props.web3) {
-      let web3 = this.props.web3
-      web3.eth.getAccounts((err, accounts) => {
-        // tslint:disable-next-line:strict-type-predicates
-        if (accounts !== undefined) {
-          let address = accounts[0]
-          this.updateBalanceTimer = setInterval(() => {
-            web3.eth.getBalance(address, async (err, balance) => {
-              let balanceInETH = parseFloat(web3.fromWei(balance, 'ether').toFixed(10))
-
-              if (this.props.displayCurrencyCode! === 'ETH') {
-                if (balanceInETH.toString() !== this.state.displayedBalance) {
-                  this.setState({
-                    balance: web3.fromWei(balance, 'ether').toString(),
-                    displayedBalance: balanceInETH.toString()
-                  })
-                  if (this.props.onChangeBalance) {
-                    this.props.onChangeBalance(parseFloat(this.state.balance))
-                  }
-                }
-              } else if (balanceInETH.toFixed(2) !== this.state.displayedBalance) {
-                this.setState({
-                  balance: web3.fromWei(balance, 'ether').toString(),
-                  displayedBalance: (await Currency.instance().convertCryptoOrCurrencyToCurrency(balanceInETH, 'ETH', this.props.displayCurrencyCode!)).toString()
-                })
-                if (this.props.onChangeBalance) {
-                  this.props.onChangeBalance(parseFloat(this.state.balance))
-                }
-              }
-            })
-          }, 1000)
-          this.setState({ address: address })
-          if (this.props.onChangeAddress) {
-            this.props.onChangeAddress(address)
+    const readAddress = async () => {
+      if (!props.workerProxy) {
+        return
+      }
+      try {
+        const accounts = await props.workerProxy.provider.request<string[]>({
+          method: "eth_accounts"
+        })
+        const nextAddress = accounts[0] || ""
+        if (!cancelled) {
+          setAddress((prev) => (prev === nextAddress ? prev : nextAddress))
+          if (nextAddress) {
+            props.onChangeAddress?.(nextAddress)
           }
         }
-      })
+      } catch (error) {
+        console.error(error)
+      }
     }
+
+    void readAddress()
+    const intervalId = globalThis.setInterval(() => {
+      void readAddress()
+    }, 30000)
+
+    return () => {
+      cancelled = true
+      globalThis.clearInterval(intervalId)
+    }
+  }, [props.workerProxy, props.onChangeAddress, props.lastUpdateDb])
+
+  React.useEffect(() => {
+    const updateBalance = async () => {
+      if (!address) {
+        setDisplayedBalance("0")
+        return
+      }
+      const network = await settingStorage.getNetwork()
+      const rpcUrl = network.value
+      const client = createPublicClient({ transport: http(rpcUrl) })
+      const balanceWei = await client.getBalance({ address: getAddress(address) })
+      const ethBalance = Number.parseFloat(formatUnits(balanceWei, 18))
+
+      if (props.onChangeBalance) {
+        props.onChangeBalance(ethBalance)
+      }
+
+      if (props.displayCurrencyCode === "ETH") {
+        setDisplayedBalance(ethBalance.toString())
+        return
+      }
+
+      const convertedBalance = await Currency.instance().convertCryptoOrCurrencyToCurrency(ethBalance, "ETH", props.displayCurrencyCode || "ETH")
+      setDisplayedBalance(convertedBalance.toString())
+    }
+
+    void updateBalance().catch(console.error)
+    const intervalId = globalThis.setInterval(() => {
+      void updateBalance().catch(console.error)
+    }, 30000)
+
+    return () => {
+      globalThis.clearInterval(intervalId)
+    }
+  }, [address, props.onChangeBalance, props.displayCurrencyCode, settingStorage, props.lastUpdateDb])
+
+  const toggleDetails = () => {
+    const next = !isDetailsDisplayed
+    setIsDetailsDisplayed(next)
+    props.onChangeDetailsDisplayed?.(next)
   }
 
-  componentWillUnmount () {
-    clearInterval(this.updateBalanceTimer)
-  }
-
-  displayDetails () {
-    let next = true
-    if (this.state.isDetailsDisplayed) {
-      next = false
-    }
-    this.setState({
-      isDetailsDisplayed: next
-    })
-    if (this.props.onChangeDetailsDisplayed) {
-      this.props.onChangeDetailsDisplayed(next)
-    }
-  }
-
-  render () {
-    return (
-      <div className={style.walletHeader} onClick={this.displayDetails.bind(this)}>
-        <IconGenerator id="walletAvatar" data={this.state.address || ''} size={51} />
-        <div className={style.walletAccount}>
-          <div className={style.walletAddress}>
-            {this.state.address}
-          </div>
-          <div className={style.walletBalance}>
-            <span className={style.ethBalance}>
-              {
-                this.props.displayCurrencyCode === 'ETH'
-                  ? this.state.displayedBalance + ' ' + this.props.displayCurrencyCode
-                  : new BigNumber.BigNumber(this.state.displayedBalance).toFixed(2) + ' ' + this.props.displayCurrencyCode
-              }
-            </span>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  return (
+    <Paper withBorder p="sm" radius="md" onClick={toggleDetails} style={{ cursor: "pointer" }}>
+      <Group wrap="nowrap" align="center">
+        <Box>
+          <IconGenerator id="walletAvatar" data={address || ""} size={51} />
+        </Box>
+        <Stack gap={2}>
+          <Text size="sm" c="dimmed" style={{ wordBreak: "break-all" }}>
+            {address || ""}
+          </Text>
+          <Text fw={700}>
+            {props.displayCurrencyCode === "ETH"
+              ? `${displayedBalance} ${props.displayCurrencyCode}`
+              : `${Number.parseFloat(displayedBalance || "0").toFixed(2)} ${props.displayCurrencyCode}`}
+          </Text>
+        </Stack>
+      </Group>
+    </Paper>
+  )
 }
 
-function mapStateToProps (state: FrameState, ownProps: WalletAccountProps): WalletAccountProps {
+function mapStateToProps(state: FrameState, ownProps: WalletAccountProps): WalletAccountProps {
   return {
-    web3: state.temp.workerProxy.web3,
     onChangeAddress: ownProps.onChangeAddress,
     onChangeDetailsDisplayed: ownProps.onChangeDetailsDisplayed,
     onChangeBalance: ownProps.onChangeBalance,
-    displayCurrencyCode: state.shared.preferences ? state.shared.preferences.currency : 'ETH'
+    displayCurrencyCode: state.shared.preferences ? state.shared.preferences.currency : "ETH",
+    workerProxy: state.temp.workerProxy,
+    lastUpdateDb: state.shared.lastUpdateDb
   }
 }
 
-export default connect(mapStateToProps)(WalletAccount)
+export default connect(mapStateToProps)(WalletAccountView)

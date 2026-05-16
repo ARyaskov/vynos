@@ -1,30 +1,32 @@
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+
 export interface MenuState {
   topmenu: {
-    currentMenuItem: string,
+    currentMenuItem: string
     submenuShowState: string
   }
 }
 
-export interface MenuAction {
-  type: any
-  menuItem?: string
-  className?: string
-}
-
 const initialState: MenuState = {
   topmenu: {
-    currentMenuItem: 'Wallet',
-    submenuShowState: ''
+    currentMenuItem: "Wallet",
+    submenuShowState: ""
   }
 }
 
-export const topmenu = (state = initialState, action: MenuAction) => {
-  switch (action.type) {
-    case 'SET_CURRENT_MENU_ITEM':
-      return state = Object.assign({}, state, { topmenu: Object.assign({}, state.topmenu, { currentMenuItem: action.menuItem }) })
-    case 'SET_SUBMENU_SHOW_STATE':
-      return state = Object.assign({}, state, { topmenu: Object.assign({}, state.topmenu, { submenuShowState: action.className }) })
-    default:
-      return state
+const menuSlice = createSlice({
+  name: "frame/menu",
+  initialState,
+  reducers: {
+    setCurrentMenuItem(state, action: PayloadAction<string>) {
+      state.topmenu.currentMenuItem = action.payload
+    },
+    setSubmenuShowState(state, action: PayloadAction<string>) {
+      state.topmenu.submenuShowState = action.payload
+    }
   }
-}
+})
+
+export const { setCurrentMenuItem, setSubmenuShowState } = menuSlice.actions
+
+export const topmenu = menuSlice.reducer

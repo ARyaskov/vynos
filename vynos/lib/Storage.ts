@@ -1,15 +1,17 @@
-import Datastore = require('nedb')
-import { default as SettingStorage, NetworkSetting } from './storage/SettingStorage'
-import { default as bus } from './bus'
-import { CHANGE_NETWORK } from './constants'
+import localforage from "localforage"
+import { default as SettingStorage } from "./storage/SettingStorage"
+import { default as bus } from "./bus"
+import { CHANGE_NETWORK } from "./constants"
+import { VYNOS_DB_NAME, VYNOS_DB_VERSION } from "./storage/dbConfig"
 
 const settingStorage = new SettingStorage()
+type LocalForageInstance = ReturnType<typeof localforage.createInstance>
 
 export default class Storage {
-  datastore: Datastore | undefined
+  datastore: LocalForageInstance | undefined
   name: string
 
-  constructor (name: string) {
+  constructor(name: string) {
     this.name = name
     this.datastore = undefined
     this.load().catch(console.error)
@@ -18,26 +20,24 @@ export default class Storage {
     })
   }
 
-  load (): Promise<void> {
-    return new Promise(resolve => {
-      settingStorage.getNetwork().then((network: NetworkSetting) => {
-        this.datastore = new Datastore({ filename: this.name + '_' + network.name, autoload: true })
-        this.datastore.loadDatabase(() => {
-          resolve()
-        })
-      })
+  async load(): Promise<void> {
+    const network = await settingStorage.getNetwork()
+    this.datastore = localforage.createInstance({
+      name: VYNOS_DB_NAME,
+      version: VYNOS_DB_VERSION,
+      storeName: `${this.name}_${network.name}`
     })
   }
 
-  ready (): Promise<Datastore> {
-    return new Promise(resolve => {
-      if (this.datastore) {
-        resolve(this.datastore)
-      } else {
-        this.load().then(() => {
-          resolve(this.datastore)
-        })
-      }
-    })
+  async ready(): Promise<LocalForageInstance> {
+    if (this.datastore) {
+      return this.datastore
+    }
+
+    await this.load()
+    if (!this.datastore) {
+      throw new Error("Storage is not initialized")
+    }
+    return this.datastore
   }
 }

@@ -1,19 +1,18 @@
 // tslint:disable-next-line:no-unused-variable
-import * as React from 'react'
-import { Image } from 'semantic-ui-react'
-
-const logoImage = require('../styles/images/sign-in_logo.svg')
+import * as React from "react"
+import { Image } from "@mantine/core"
+import logoImage from "../styles/images/sign-in_logo.svg"
 
 const VYNOS_STYLE = {
-  font: '400 40px \'Alegreya Sans\', sans-serif',
-  color: '#D04071',
-  lineHeight: '0'
+  font: "400 40px 'Alegreya Sans', sans-serif",
+  color: "#D04071",
+  lineHeight: "0"
 }
 
 const Logo = () => {
   return (
-    <div style={{ width: '100px' }} >
-      <Image src={logoImage} centered={true}/>
+    <div style={{ width: "100px" }}>
+      <Image src={logoImage} />
       <h1 style={VYNOS_STYLE}>vynos</h1>
     </div>
   )

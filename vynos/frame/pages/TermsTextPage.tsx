@@ -1,29 +1,28 @@
-import * as React from 'react'
-import { Container, Menu } from 'semantic-ui-react'
-const style = require('../styles/ynos.css')
+import * as React from "react"
+import { Box, Button, Container, Paper, Stack, Text, Title } from "@mantine/core"
 
 export interface TermsTextPageProps {
   goBack: () => void
 }
 
-export default class TermsTextPage extends React.Component<TermsTextPageProps, any> {
-  render () {
-    return (
-      <div>
-        <Menu className={style.clearBorder}>
-          <Menu.Item
-            link={true}
-            className={style.menuIntoOneItemFluid}
-            onClick={this.props.goBack}
-          >
-            <i className={style.vynosArrowBack}/> Terms of Use
-          </Menu.Item>
-        </Menu>
-        <Container className={style.termsText}>
-          <p>The following describes the terms of use that FIXME (“LP,” “we,” “our,” or “us”) require all our visitors to follow when using this Site and purchasing Publisher Services (as defined below) through the FIXME. In these Terms of Use, the phrase “this Site” refers to our web site located at www.FIXME.com, and the phrase “FIXME” ("FIXME Service") refers to the service offered at this Site that enables users to pay for Publisher Services (as defined below).</p>
-          <p>FIXME Service is currently offered as a private beta. While we will make efforts to ensure that the FIXME is stable and provided in an error-free fashion, certain technical issues may appear from time to time. File security and access cannot be guaranteed. If you experience an issue with the FIXME, or find any bugs you would like to help us squish, please contact us.</p>
-        </Container>
-      </div>
-    )
-  }
+export default function TermsTextPage({ goBack }: TermsTextPageProps): React.JSX.Element {
+  return (
+    <Container size={800} py="lg">
+      <Button variant="subtle" onClick={goBack} mb="sm">
+        {"<-"} Terms of Use
+      </Button>
+      <Paper withBorder radius="md" p="lg">
+        <Stack gap="sm">
+          <Title order={2}>Terms of Use</Title>
+          <Box style={{ maxHeight: "65vh", overflow: "auto" }}>
+            <Text mt="sm">
+              Vynos Service is currently offered as a private beta. While we will make efforts to ensure that Vynos is stable and provided in an
+              error-free fashion, certain technical issues may appear from time to time. File security and access cannot be guaranteed. If you
+              experience an issue with Vynos, or find any bugs you would like to help us fix, please contact us.
+            </Text>
+          </Box>
+        </Stack>
+      </Paper>
+    </Container>
+  )
 }

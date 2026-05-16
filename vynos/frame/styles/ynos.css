@@ -1,6 +1,6 @@
-@import './fonts.css';
-@import './global.css';
-@import './hamburgers.css';
+@import "./fonts.css";
+@import "./global.css";
+@import "./hamburgers.css";
 
 .init-terms-motivation {
   text-align: center;
@@ -51,7 +51,7 @@ a.read-terms {
 .wallet-menu-container {
   display: flex;
   flex-flow: column;
-  height: 100%
+  height: 100%;
 }
 
 .wallet-menu {
@@ -73,7 +73,7 @@ h1.mnemonic-header > .sub.header {
 h1.encryption-header,
 h1.mnemonic-header,
 h1.welcome-header {
-  font-family: 'Alegreya Sans', sans-serif !important;
+  font-family: "Alegreya Sans", sans-serif !important;
   font-size: 26px !important;
   font-weight: 400 !important;
 }
@@ -93,7 +93,7 @@ h1.welcome-header {
 .mnemonic-input {
   border: 0 !important;
   border-radius: 0 !important;
-  border-bottom: 1px solid rgba(34, 36, 38, .15) !important;
+  border-bottom: 1px solid rgba(34, 36, 38, 0.15) !important;
   box-shadow: none !important;
   padding: 10px 0 !important;
 }
@@ -144,7 +144,7 @@ Wallet page
 }
 
 .wallet-address {
-  font-family: 'Alegreya Sans', sans-serif !important;
+  font-family: "Alegreya Sans", sans-serif !important;
   font-weight: 400 !important;
   font-size: 26px !important;
   color: #333 !important;
@@ -156,7 +156,7 @@ Wallet page
 /* In Firefox only */
 @-moz-document url-prefix() {
   .wallet-address {
-    font-family: 'Alegreya Sans', sans-serif !important;
+    font-family: "Alegreya Sans", sans-serif !important;
     font-weight: 400 !important;
     font-size: 26px !important;
     color: #333 !important;
@@ -218,11 +218,11 @@ div.terms-text > p {
   box-shadow: 0 7px 10px -5px rgba(0, 0, 0, 0.1) !important;
   border-radius: 0 !important;
   padding-bottom: 20px !important;
-  background-color: #FAFAFA !important;
+  background-color: #fafafa !important;
 }
 
 #menu-item-fluid > .submenu-fluid > a {
-  font-family: 'Alegreya Sans', sans-serif;
+  font-family: "Alegreya Sans", sans-serif;
   font-weight: 500 !important;
   font-size: 22px !important;
   text-align: center !important;
@@ -246,7 +246,7 @@ div.terms-text > p {
   padding: 0 20px 15px 15px !important;
 }
 
-.scrollbar-container.list-wrap > div:nth-child(n+2) {
+.scrollbar-container.list-wrap > div:nth-child(n + 2) {
   padding-top: 15px !important;
 }
 
@@ -391,7 +391,7 @@ Top menu
 .menu-into-one-item-fluid {
   display: flex !important;
   align-items: center !important;
-  font-family: 'Alegreya Sans', sans-serif !important;
+  font-family: "Alegreya Sans", sans-serif !important;
   font-weight: 500 !important;
   font-size: 22px !important;
   width: 100%;
@@ -434,7 +434,7 @@ Top menu
 }
 
 #menu-item-fluid > * {
-  font-family: 'Alegreya Sans', sans-serif !important;
+  font-family: "Alegreya Sans", sans-serif !important;
   font-weight: 500 !important;
   font-size: 22px !important;
 }
@@ -473,8 +473,7 @@ Top menu
 /******************************
 Network page
 ******************************/
-.form-network
-input[type=radio] {
+.form-network input[type="radio"] {
   position: absolute !important;
   visibility: hidden !important;
   display: none !important;
@@ -484,8 +483,7 @@ input[type=radio] {
   margin: 0 !important;
 }
 
-.form-network
-label {
+.form-network label {
   display: inline-block;
   cursor: pointer;
   font-family: "Roboto", sans-serif !important;
@@ -493,15 +491,12 @@ label {
   padding: 10px 20px;
 }
 
-.form-network
-input[type=radio]:checked + label {
-  background: #29ABE2;
+.form-network input[type="radio"]:checked + label {
+  background: #29abe2;
 }
 
-.form-network
-label:before,
-.form-network
-label:after {
+.form-network label:before,
+.form-network label:after {
   display: none !important;
 }
 
@@ -509,7 +504,7 @@ label:after {
 TransactionImpl page
 ******************************/
 .key-highlight {
-  color: #00AEEF;
+  color: #00aeef;
 }
 
 /******************************
@@ -535,10 +530,10 @@ Buttons
 button.button-nav {
   min-width: 140px;
   height: 36px;
-  background-color: #00AEEF !important;
+  background-color: #00aeef !important;
   color: #fff !important;
   font-size: 14px !important;
-  font-family: 'Source Sans Pro', sans-serif !important;
+  font-family: "Source Sans Pro", sans-serif !important;
   font-weight: 400 !important;
   text-transform: uppercase !important;
   margin: 0 !important;
@@ -550,7 +545,7 @@ button.forget-account {
   background-color: #ef776a !important;
   color: #fff !important;
   font-size: 14px !important;
-  font-family: 'Source Sans Pro', sans-serif !important;
+  font-family: "Source Sans Pro", sans-serif !important;
   font-weight: 400 !important;
   text-transform: uppercase !important;
   margin: 0 !important;
@@ -564,22 +559,22 @@ button.forget-account {
 
 .error-text {
   font-size: 12px;
-  color: #D04071;
+  color: #d04071;
 }
 
 .error-text * {
-  color: #D04071;
+  color: #d04071;
 }
 
 .input-error {
-  color: #D04071 !important;
-  border-bottom: 1px solid #D04071 !important;
+  color: #d04071 !important;
+  border-bottom: 1px solid #d04071 !important;
 }
 
 .select-private-key-file {
   color: #fff !important;
   font-size: 14px !important;
-  font-family: 'Source Sans Pro', sans-serif !important;
+  font-family: "Source Sans Pro", sans-serif !important;
   font-weight: 400 !important;
   text-transform: uppercase !important;
 }
@@ -588,7 +583,7 @@ button.forget-account {
 Channels page
 ******************************/
 #active-channel {
-  background-color: #29ABE2;
+  background-color: #29abe2;
 }
 
 #active-channel * {
@@ -613,7 +608,7 @@ Channels page
 }
 
 #closed-channel a {
-  color: #00AEEF !important;
+  color: #00aeef !important;
 }
 
 /******************************
@@ -662,4 +657,236 @@ Approve page
 
 .mnemonic-tabs .mnemonic-save-to-file {
   margin-top: 7vh;
+}
+
+/* Cozy theme variants */
+.vynos-shell[data-vynos-theme="light"] {
+  --vynos-bg: #f8f5ef;
+  --vynos-bg-soft: #fdfbf7;
+  --vynos-surface: #fffdf9;
+  --vynos-surface-2: #fff8f2;
+  --vynos-text: #3c3732;
+  --vynos-muted: #857a70;
+  --vynos-border: #e9ddd1;
+  --vynos-accent: #cf4b82;
+  --vynos-accent-soft: #fbe8f2;
+  --vynos-topbar: rgba(255, 253, 249, 0.86);
+  --vynos-input-border: #ccb8a8;
+  --vynos-input-outline: rgba(95, 70, 54, 0.1);
+  --vynos-field-height: 46px;
+  --vynos-field-px: 16px;
+  --vynos-field-px-icon: 46px;
+  --vynos-shadow: 0 10px 28px rgba(104, 72, 54, 0.08);
+}
+
+.vynos-shell[data-vynos-theme="dark"] {
+  --vynos-bg: #16161a;
+  --vynos-bg-soft: #1f2026;
+  --vynos-surface: #262730;
+  --vynos-surface-2: #2f3038;
+  --vynos-text: #f0ece7;
+  --vynos-muted: #b5aba2;
+  --vynos-border: #57596a;
+  --vynos-accent: #ff9ec6;
+  --vynos-accent-soft: rgba(255, 158, 198, 0.16);
+  --vynos-topbar: rgba(40, 41, 49, 0.92);
+  --vynos-input-border: #8a8fa7;
+  --vynos-input-outline: rgba(193, 203, 255, 0.14);
+  --vynos-field-height: 46px;
+  --vynos-field-px: 16px;
+  --vynos-field-px-icon: 46px;
+  --vynos-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+}
+
+.vynos-shell {
+  min-height: 100vh;
+  color: var(--vynos-text);
+  background: radial-gradient(120px 120px at 90% 8%, rgba(222, 142, 188, 0.16), transparent 70%),
+    radial-gradient(140px 140px at 12% 18%, rgba(238, 190, 151, 0.2), transparent 72%),
+    linear-gradient(180deg, var(--vynos-bg-soft) 0%, var(--vynos-bg) 100%);
+}
+
+.vynos-wallet-layout {
+  min-height: 100vh;
+}
+
+.vynos-topbar {
+  background: var(--vynos-topbar) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--vynos-border) !important;
+  box-shadow: 0 6px 18px rgba(108, 79, 60, 0.06);
+}
+
+.vynos-section-title {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.vynos-menu-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #d85a90 0%, #c8457d 100%);
+  color: #fff8fd !important;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow: 0 5px 10px rgba(200, 69, 125, 0.3);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vynos-shell .mantine-Menu-itemSection {
+  min-width: 24px;
+}
+
+.vynos-lock-button {
+  border: 1px solid var(--vynos-border);
+  background: var(--vynos-surface) !important;
+  min-width: 58px;
+  border-radius: 12px;
+}
+
+.vynos-content-scroll > div {
+  padding: 10px 8px 16px;
+}
+
+.vynos-shell .mantine-Paper-root {
+  background: var(--vynos-surface);
+  border-color: var(--vynos-border) !important;
+  box-shadow: var(--vynos-shadow);
+}
+
+.vynos-shell[data-vynos-theme="dark"] .mantine-Paper-root {
+  outline: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vynos-shell .mantine-Button-root {
+  background: linear-gradient(180deg, #d85a90 0%, #c8457d 100%);
+  border: 0;
+  box-shadow: 0 7px 18px rgba(200, 69, 125, 0.24);
+}
+
+.vynos-shell .mantine-Button-root:hover {
+  transform: translateY(-1px);
+}
+
+.vynos-shell .mantine-Button-root[data-variant="subtle"],
+.vynos-shell .mantine-Button-root[data-variant="light"] {
+  background: transparent;
+  box-shadow: none;
+  color: var(--vynos-accent);
+}
+
+.vynos-shell .mantine-Anchor-root {
+  color: #b84b78;
+  font-weight: 600;
+}
+
+.vynos-shell .mantine-Input-input {
+  background: var(--vynos-surface);
+  border: 1.5px solid var(--vynos-input-border) !important;
+  border-radius: 12px;
+  color: var(--vynos-text) !important;
+  box-shadow:
+    0 0 0 1px var(--vynos-input-outline),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  min-height: var(--vynos-field-height);
+  padding: 0 var(--vynos-field-px) !important;
+  text-transform: none !important;
+}
+
+.vynos-shell .mantine-PasswordInput-innerInput {
+  padding-left: var(--vynos-field-px) !important;
+  padding-right: var(--vynos-field-px-icon) !important;
+  text-transform: none !important;
+}
+
+.vynos-shell .mantine-PasswordInput-input {
+  padding-left: var(--vynos-field-px) !important;
+  padding-right: var(--vynos-field-px-icon) !important;
+  text-transform: none !important;
+}
+
+.vynos-shell .mantine-Input-input::placeholder {
+  color: var(--vynos-muted);
+}
+
+.vynos-shell .mantine-Select-input {
+  border: 1.5px solid var(--vynos-input-border) !important;
+  box-shadow: 0 0 0 1px var(--vynos-input-outline);
+  color: var(--vynos-text) !important;
+  min-height: var(--vynos-field-height);
+  padding: 0 var(--vynos-field-px-icon) 0 var(--vynos-field-px) !important;
+  text-transform: none !important;
+}
+
+.vynos-shell .mantine-Input-input:focus,
+.vynos-shell .mantine-Select-input:focus {
+  border-color: var(--vynos-accent);
+  box-shadow: 0 0 0 2px rgba(217, 138, 175, 0.22);
+}
+
+.vynos-shell .mantine-Select-dropdown,
+.vynos-shell .mantine-Combobox-dropdown,
+.vynos-shell .mantine-Menu-dropdown {
+  border: 1px solid var(--vynos-border);
+  background: var(--vynos-surface);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(95, 66, 51, 0.14);
+}
+
+.vynos-shell .mantine-Menu-item,
+.vynos-shell .mantine-Combobox-option {
+  border-radius: 8px;
+  color: var(--vynos-text) !important;
+}
+
+.vynos-shell .mantine-Menu-item:hover,
+.vynos-shell .mantine-Combobox-option:hover {
+  background: var(--vynos-accent-soft);
+}
+
+.vynos-shell[data-vynos-theme="dark"] .mantine-Combobox-option[data-combobox-selected="true"],
+.vynos-shell[data-vynos-theme="dark"] .mantine-Combobox-option[data-combobox-active="true"] {
+  background: rgba(255, 158, 198, 0.22) !important;
+  color: #fff2fa !important;
+}
+
+.vynos-shell[data-vynos-theme="dark"] .mantine-Combobox-dropdown .mantine-Combobox-option {
+  color: #ece8e2 !important;
+  opacity: 1 !important;
+}
+
+.vynos-shell[data-vynos-theme="dark"] .mantine-Combobox-dropdown .mantine-Combobox-option * {
+  color: inherit !important;
+  opacity: 1 !important;
+}
+
+.vynos-shell[data-vynos-theme="dark"] .mantine-Combobox-dropdown .mantine-Combobox-option[data-combobox-selected="true"],
+.vynos-shell[data-vynos-theme="dark"] .mantine-Combobox-dropdown .mantine-Combobox-option[data-combobox-active="true"] {
+  background: rgba(255, 158, 198, 0.28) !important;
+  color: #fff6fb !important;
+}
+
+.vynos-shell[data-vynos-theme="dark"] .mantine-Combobox-checkIcon {
+  color: #ffd6ea !important;
+  opacity: 1 !important;
+}
+
+.vynos-shell .mantine-Text-root {
+  color: var(--vynos-text);
+}
+
+.vynos-subtle-divider {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent 0%, var(--vynos-border) 18%, var(--vynos-border) 82%, transparent 100%);
+  opacity: 0.75;
+  margin: 4px 0;
 }

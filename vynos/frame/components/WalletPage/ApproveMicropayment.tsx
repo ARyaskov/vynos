@@ -1,9 +1,7 @@
-import * as React from 'react'
-import { Form, Divider } from 'semantic-ui-react'
-import TransactionMeta from '../../../lib/TransactionMeta'
-import { formatAmount } from '../../../lib/formatting'
-
-const style = require('../../styles/ynos.css')
+import * as React from "react"
+import { Divider, Paper, Stack, Text } from "@mantine/core"
+import TransactionMeta from "../../../lib/TransactionMeta"
+import { formatAmount } from "../../../lib/formatting"
 
 export interface ApproveTransactionProps {
   transaction: TransactionMeta
@@ -14,36 +12,34 @@ export interface ApproveTransactionState {
 }
 
 export default class ApprovePage extends React.Component<ApproveTransactionProps, ApproveTransactionState> {
-  constructor (props: any) {
+  constructor(props: ApproveTransactionProps) {
     super(props)
-    let { value, denomination } = formatAmount(this.props.transaction.amount)
-    // Format amount like 1,000,000
-    let delimitedOutput = this.props.transaction.amount.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
-    let formatedAmount = value + ' ' + denomination + '(' + delimitedOutput + ' wei)'
-    this.state = {
-      formatedAmount: formatedAmount
-    }
+    const { value, denomination } = formatAmount(this.props.transaction.amount)
+    const delimitedOutput = this.props.transaction.amount.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")
+    const formatedAmount = `${value} ${denomination} (${delimitedOutput} wei)`
+    this.state = { formatedAmount }
   }
 
-  render () {
+  render() {
     return (
-      <Form className={style.encryptionForm}>
-        <Form.Field className={style.clearIndent}>
-          <Form.Group grouped={true}>
-            <label>Site</label>
-            <div>{this.props.transaction.origin}</div>
-          </Form.Group>
-          <Form.Group grouped={true}>
-            <label>Description</label>
-            <div>{this.props.transaction.description}</div>
-          </Form.Group>
-          <Form.Group grouped={true}>
-            <label>Amount</label>
-            <div>{this.state.formatedAmount}</div>
-          </Form.Group>
-        </Form.Field>
-        <Divider hidden={true}/>
-      </Form>
+      <Paper withBorder p="md" radius="md">
+        <Stack gap="xs">
+          <Text size="sm" c="dimmed">
+            Site
+          </Text>
+          <Text>{this.props.transaction.origin}</Text>
+          <Divider />
+          <Text size="sm" c="dimmed">
+            Description
+          </Text>
+          <Text>{this.props.transaction.description}</Text>
+          <Divider />
+          <Text size="sm" c="dimmed">
+            Amount
+          </Text>
+          <Text>{this.state.formatedAmount}</Text>
+        </Stack>
+      </Paper>
     )
   }
 }

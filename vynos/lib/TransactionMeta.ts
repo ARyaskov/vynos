@@ -1,4 +1,4 @@
-import TransactionKind from './TransactionKind'
+import TransactionKind from "./TransactionKind"
 
 export default interface TransactionMeta {
   id: string
@@ -8,8 +8,8 @@ export default interface TransactionMeta {
   meta?: string
   icon?: string
   time: number
-  amount: number
-  fee?: number
+  amount: number | string | bigint
+  fee?: number | string | bigint
   kind: TransactionKind
   state: string
   data?: string

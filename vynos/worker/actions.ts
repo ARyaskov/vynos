@@ -1,91 +1,61 @@
-// tslint:disable-next-line:no-unused-variable
-import actionCreatorFactory, { ActionCreator } from 'typescript-fsa'
-import { Preferences, WorkerState, PersistentState } from './WorkerState'
-import * as Wallet from 'ethereumjs-wallet'
-
-const actionCreator = actionCreatorFactory('worker')
-
-// Runtime
-export const setWallet = actionCreator<Wallet | undefined>('runtime/setWallet')
-export function setWalletHandler (state: WorkerState, wallet: Wallet | undefined): WorkerState {
-  return { ...state,
-    runtime: { ...state.runtime, wallet: wallet }
-  }
-}
-
-export const setLastMicropaymentTime = actionCreator<number>('runtime/setLastMicropaymentTime')
-export function setLastMicropaymentTimeHandler (state: WorkerState, lastMicropaymentTime: number): WorkerState {
-  return { ...state,
-    runtime: { ...state.runtime, lastMicropaymentTime: lastMicropaymentTime }
-  }
-}
-
-// Persistent
-export const setKeyring = actionCreator<string>('persistent/setKeyring')
-export function setKeyringHandler (state: WorkerState, keyring: string): WorkerState {
-  return { ...state,
-    persistent: { ...state.persistent, keyring: keyring }
-  }
-}
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
+import { type Preferences, type WorkerState, type PersistentState, type RuntimeWallet, INITIAL_STATE } from "./WorkerState"
 
 export type RestoreWalletParam = {
-  keyring: string,
-  wallet: Wallet
-}
-export const restoreWallet = actionCreator<RestoreWalletParam>('persistent+runtime/restoreWallet')
-export function restoreWalletHandler (state: WorkerState, param: RestoreWalletParam): WorkerState {
-  return { ...state,
-    persistent: { ...state.persistent, didInit: true, keyring: param.keyring },
-    runtime: { ...state.runtime, wallet: param.wallet }
-  }
+  keyring: string
+  wallet: RuntimeWallet
 }
 
-export const setDidStoreMnemonic = actionCreator<boolean>('persistent/setDidStoreMnemonic')
-export function setDidStoreMnemonicHandler (state: WorkerState): WorkerState {
-  return {
-    ...state,
-    persistent: { ...state.persistent, didInit: true }
+const workerSlice = createSlice({
+  name: "worker",
+  initialState: INITIAL_STATE as WorkerState,
+  reducers: {
+    setWallet(state, action: PayloadAction<RuntimeWallet | undefined>) {
+      state.runtime.wallet = action.payload
+    },
+    setLastMicropaymentTime(state, action: PayloadAction<number>) {
+      state.runtime.lastMicropaymentTime = action.payload
+    },
+    setKeyring(state, action: PayloadAction<string>) {
+      state.persistent.keyring = action.payload
+    },
+    restoreWallet(state, action: PayloadAction<RestoreWalletParam>) {
+      state.persistent.didInit = true
+      state.persistent.keyring = action.payload.keyring
+      state.runtime.wallet = action.payload.wallet
+    },
+    setDidStoreMnemonic(state, _action: PayloadAction<boolean>) {
+      state.persistent.didInit = true
+    },
+    setTransactionPending(state, action: PayloadAction<boolean>) {
+      state.runtime.isTransactionPending = action.payload ? Date.now() : 0
+    },
+    rememberPage(state, action: PayloadAction<string>) {
+      state.persistent.rememberPath = action.payload
+    },
+    setLastUpdateDb(state, action: PayloadAction<number>) {
+      state.runtime.lastUpdateDb = action.payload
+    },
+    setPreferences(state, action: PayloadAction<Preferences>) {
+      state.persistent.preferences = action.payload
+    },
+    setPersistentState(state, action: PayloadAction<PersistentState>) {
+      state.persistent = action.payload
+    }
   }
-}
+})
 
-export const setTransactionPending = actionCreator<boolean>('runtime/setTransactionPending')
-export function setTransactionPendingHandler (state: WorkerState, pending: boolean): WorkerState {
-  let pendingDate = 0
-  if (pending) {
-    pendingDate = Date.now()
-  }
-  return {
-    ...state,
-    runtime: { ...state.runtime, isTransactionPending: pendingDate }
-  }
-}
+export const {
+  setWallet,
+  setLastMicropaymentTime,
+  setKeyring,
+  restoreWallet,
+  setDidStoreMnemonic,
+  setTransactionPending,
+  rememberPage,
+  setLastUpdateDb,
+  setPreferences,
+  setPersistentState
+} = workerSlice.actions
 
-export const rememberPage = actionCreator<string>('persistent/rememberPage')
-export function rememberPageHandler (state: WorkerState, path: string): WorkerState {
-  return {
-    ...state,
-    persistent: { ...state.persistent, rememberPath: path }
-  }
-}
-
-export const setLastUpdateDb = actionCreator<number>('runtime/setLastUpdateDb')
-export function setLastUpdateDbHandler (state: WorkerState, timestamp: number): WorkerState {
-  return {
-    ...state,
-    runtime: { ...state.runtime, lastUpdateDb: timestamp }
-  }
-}
-
-export const setPreferences = actionCreator<Preferences>('persistent/setPreferences')
-export function setPreferencesHandler (state: WorkerState, preferences: Preferences): WorkerState {
-  return { ...state,
-    persistent: { ...state.persistent, preferences }
-  }
-}
-
-export const setPersistentState = actionCreator<PersistentState>('persistent/setPersistentState')
-export function setPersistentStateHandler (state: WorkerState, persistentState: PersistentState): WorkerState {
-  return { ...state,
-    persistent: persistentState
-  }
-}
+export default workerSlice

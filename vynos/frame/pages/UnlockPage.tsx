@@ -1,19 +1,13 @@
-import * as React from 'react'
-import { connect } from 'react-redux'
-import WorkerProxy from '../WorkerProxy'
-import { Container, Form, Button, Divider, Icon } from 'semantic-ui-react'
-import Logo from '../components/Logo'
-import { FrameState } from '../redux/FrameState'
-import RestorePage from './RestorePage'
-
-const style = require('../styles/ynos.css')
+import * as React from "react"
+import { useSelector } from "react-redux"
+import { Anchor, Box, Button, Container, Divider, Paper, PasswordInput, Stack, Text } from "@mantine/core"
+import Logo from "../components/Logo"
+import { FrameState } from "../redux/FrameState"
+import RestorePage from "./RestorePage"
+import { getPasswordByBiometric, isBiometricUnlockConfigured, isBiometricUnlockSupported } from "../lib/biometricUnlock"
 
 export interface OwnUnlockProps {
   showVerifiable: () => void
-}
-
-export interface UnlockPageProps {
-  workerProxy: WorkerProxy
 }
 
 export type UnlockPageState = {
@@ -21,107 +15,130 @@ export type UnlockPageState = {
   passwordError: string | null
   loading: boolean
   displayRestore: boolean
+  biometricConfigured: boolean
+  biometricLoading: boolean
+  biometricError: string | null
 }
 
-export class UnlockPage extends React.Component<UnlockPageProps & OwnUnlockProps, UnlockPageState> {
-  constructor (props: UnlockPageProps & OwnUnlockProps) {
-    super(props)
-    this.state = {
-      password: '',
-      passwordError: null,
-      loading: false,
-      displayRestore: false
-    }
-    this.handleChangePassword = this.handleChangePassword.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
-  }
+export default function UnlockPage({ showVerifiable }: OwnUnlockProps): React.JSX.Element {
+  const workerProxy = useSelector((state: FrameState) => state.temp.workerProxy)
+  const biometricAutoAttemptedRef = React.useRef(false)
+  const [state, setState] = React.useState<UnlockPageState>({
+    password: "",
+    passwordError: null,
+    loading: false,
+    displayRestore: false,
+    biometricConfigured: false,
+    biometricLoading: false,
+    biometricError: null
+  })
 
-  handleChangePassword (event: React.ChangeEvent<HTMLInputElement>) {
-    let value = event.target.value
-    this.setState({
-      password: value,
-      passwordError: null
-    })
-  }
-
-  handleSubmit (ev: React.FormEvent<HTMLFormElement>) {
-    ev.preventDefault()
-    this.setState({
-      loading: true
-    })
-    let password = (this.state.password || '').toString()
-    this.props.workerProxy.doUnlock(password).then((errorReason) => {
-      if (errorReason) {
-        this.setState({
-          passwordError: errorReason
-        })
+  React.useEffect(() => {
+    const load = async () => {
+      if (!isBiometricUnlockSupported()) {
+        return
       }
-    })
-  }
-
-  renderPasswordInput () {
-    let className = this.state.passwordError ? style.inputError : ''
-    return (
-      <input
-        type="password"
-        placeholder="Password"
-        className={className}
-        onChange={this.handleChangePassword.bind(this)}
-        autoComplete="wallet-password"
-      />
-    )
-  }
-
-  renderPasswordHint () {
-    if (this.state.passwordError) {
-      return <span className={style.errorText}><i className={style.vynosInfo}/> {this.state.passwordError}</span>
-    } else {
-      return <span className={style.passLenText}>&nbsp;</span>
+      const configured = await isBiometricUnlockConfigured()
+      setState((prev) => ({ ...prev, biometricConfigured: configured }))
     }
-  }
+    void load()
+  }, [])
 
-  doDisplayRestore () {
-    this.setState({
-      displayRestore: true
-    })
-  }
+  const handleSubmit = React.useCallback(
+    (ev: React.FormEvent<HTMLFormElement>) => {
+      ev.preventDefault()
+      setState((prev) => ({ ...prev, loading: true }))
+      const password = (state.password || "").toString()
+      workerProxy
+        .doUnlock(password)
+        .then((errorReason) => {
+          if (errorReason) {
+            setState((prev) => ({ ...prev, passwordError: errorReason }))
+          }
+        })
+        .finally(() => {
+          setState((prev) => ({ ...prev, loading: false }))
+        })
+    },
+    [state.password, workerProxy]
+  )
 
-  doneDisplayRestorePage () {
-    this.setState({
-      displayRestore: false
-    })
-  }
-
-  render () {
-    if (this.state.displayRestore) {
-      return <RestorePage goBack={this.doneDisplayRestorePage.bind(this)} showVerifiable={this.props.showVerifiable}/>
+  const handleBiometricUnlock = React.useCallback(async () => {
+    setState((prev) => ({ ...prev, biometricLoading: true, biometricError: null, passwordError: null }))
+    try {
+      const password = await getPasswordByBiometric()
+      const errorReason = await workerProxy.doUnlock(password)
+      if (errorReason) {
+        setState((prev) => ({ ...prev, biometricError: errorReason }))
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Biometric unlock failed"
+      setState((prev) => ({ ...prev, biometricError: message }))
+    } finally {
+      setState((prev) => ({ ...prev, biometricLoading: false }))
     }
+  }, [workerProxy])
 
-    return (
-      <Container textAlign="center" className={`${style.flexContainer} ${style.clearBorder}`}>
-        <Logo />
-        <Divider hidden={true} />
-        <Form onSubmit={this.handleSubmit} className={style.authForm}>
-          <Form.Field className={style.authFormField} style={{ textAlign: 'left' }}>
-            {this.renderPasswordInput()}
-            {this.renderPasswordHint()}
-          </Form.Field>
-          <Divider hidden={true} />
-          <Button type="submit" content="Unlock" primary={true} className={style.buttonNav} />
-          <br />
-          <a onClick={this.doDisplayRestore.bind(this)}>Restore wallet</a>
-        </Form>
-        <a onClick={this.props.showVerifiable} id={style.shieldIcon}><Icon name={'shield'} size={'large'}/></a>
-      </Container>
-    )
+  React.useEffect(() => {
+    if (!state.biometricConfigured) {
+      return
+    }
+    if (biometricAutoAttemptedRef.current) {
+      return
+    }
+    if (state.loading || state.biometricLoading || state.displayRestore || state.password) {
+      return
+    }
+    biometricAutoAttemptedRef.current = true
+    void handleBiometricUnlock()
+  }, [handleBiometricUnlock, state.biometricConfigured, state.loading, state.biometricLoading, state.displayRestore, state.password])
+
+  if (state.displayRestore) {
+    return <RestorePage goBack={() => setState((prev) => ({ ...prev, displayRestore: false }))} showVerifiable={showVerifiable} />
   }
-}
 
-function mapStateToProps (state: FrameState, props: OwnUnlockProps): UnlockPageProps & OwnUnlockProps {
-  return {
-    workerProxy: state.temp.workerProxy,
-    showVerifiable: props.showVerifiable
-  }
+  return (
+    <Container size={420} py="xl">
+      <Paper withBorder radius="md" p="lg">
+        <Stack gap="sm" align="stretch">
+          <Box ta="center">
+            <Logo />
+          </Box>
+          <Divider variant="dashed" />
+          <form onSubmit={handleSubmit}>
+            <Stack gap="sm">
+              <PasswordInput
+                placeholder="Password"
+                onChange={(event) => setState((prev) => ({ ...prev, password: event.target.value, passwordError: null }))}
+                autoComplete="wallet-password"
+                error={state.passwordError ?? undefined}
+              />
+              {!state.passwordError && <Text size="sm">&nbsp;</Text>}
+              <Button type="submit" loading={state.loading}>
+                Unlock
+              </Button>
+              {state.biometricConfigured && (
+                <Button variant="light" onClick={handleBiometricUnlock} loading={state.biometricLoading}>
+                  Unlock with fingerprint
+                </Button>
+              )}
+              {state.biometricError && (
+                <Text size="sm" c="red">
+                  {state.biometricError}
+                </Text>
+              )}
+              <Anchor component="button" onClick={() => setState((prev) => ({ ...prev, displayRestore: true }))}>
+                Restore wallet
+              </Anchor>
+            </Stack>
+          </form>
+        </Stack>
+      </Paper>
+      <Box ta="right" mt="xs">
+        <Anchor component="button" onClick={showVerifiable}>
+          Verify Vynos
+        </Anchor>
+      </Box>
+    </Container>
+  )
 }
-
-export default connect(mapStateToProps)(UnlockPage)

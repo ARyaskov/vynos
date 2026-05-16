@@ -1,57 +1,61 @@
-// tslint:disable-next-line:no-unused-variable
-import * as React from 'react'
-import { List, Image } from 'semantic-ui-react'
-import Web3 = require('web3')
-import ChannelMetaStorage from '../../../../lib/storage/ChannelMetaStorage'
-import { connect } from 'react-redux'
-import { FrameState } from '../../../redux/FrameState'
-import { isUndefined } from 'util'
-import WorkerProxy from '../../../WorkerProxy'
-
-const style = require('../../../styles/ynos.css')
+import * as React from "react"
+import { Anchor, Group, Image, Paper, Stack, Text } from "@mantine/core"
+import ChannelMetaStorage, { type ChannelMeta } from "../../../../lib/storage/ChannelMetaStorage"
+import { connect } from "react-redux"
+import { FrameState } from "../../../redux/FrameState"
+import WorkerProxy from "../../../WorkerProxy"
+import { type PaymentChannel } from "../../../../lib/paymentChannel"
+import { resource } from "../../../../lib/helpers"
 
 export interface ChannelsSubpageProps {
-  lastUpdateDb?: number,
-  web3?: Web3
+  lastUpdateDb?: number
   workerProxy?: WorkerProxy
 }
 
 export interface ChannelsSubpageState {
-  channels: any,
+  channels: ChannelListItem[]
   activeChannel: string
+}
+
+type ChannelListItem = ChannelMeta & {
+  balance?: bigint
+  state: number
+  canClose: boolean
+  desc?: string
 }
 
 export class ChannelsSubpage extends React.Component<ChannelsSubpageProps, ChannelsSubpageState> {
   channelMetaStorage: ChannelMetaStorage
   localLastUpdateDb: number
 
-  constructor (props?: ChannelsSubpageProps | undefined, context?: any) {
-    super(props!, context)
+  constructor(props?: ChannelsSubpageProps | undefined) {
+    super(props!)
     this.state = {
       channels: [],
-      activeChannel: ''
+      activeChannel: ""
     }
     this.channelMetaStorage = new ChannelMetaStorage()
-    this.localLastUpdateDb = props!.lastUpdateDb!
+    this.localLastUpdateDb = props?.lastUpdateDb ?? 0
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.updateListChannels({})
   }
 
-  shouldComponentUpdate (nextProps: ChannelsSubpageProps) {
-    if (this.localLastUpdateDb < nextProps.lastUpdateDb!) {
-      this.localLastUpdateDb = nextProps.lastUpdateDb!
+  shouldComponentUpdate(nextProps: ChannelsSubpageProps) {
+    const nextUpdateDb = nextProps.lastUpdateDb ?? 0
+    if (this.localLastUpdateDb < nextUpdateDb) {
+      this.localLastUpdateDb = nextUpdateDb
       this.updateListChannels({})
       return false
     }
     return true
   }
 
-  closeChannelId (channel: any) {
+  closeChannelId(channel: ChannelListItem) {
     this.props.workerProxy!.closeChannel(channel.channelId).then(() => {
       this.channelMetaStorage.setClosingTime(channel.channelId, Date.now()).then(() => {
-        let change: any = {}
+        const change: Record<string, Partial<ChannelListItem>> = {}
         change[channel.channelId] = {
           state: channel.state === 0 ? 1 : 2
         }
@@ -61,103 +65,110 @@ export class ChannelsSubpage extends React.Component<ChannelsSubpageProps, Chann
     })
   }
 
-  updateListChannels (change: any) {
-    this.props.workerProxy!.listChannels().then(channels => {
-      let balanceByChannelId: any = {}
-      let stateByChannelId: any = {}
-      let channelIds = channels.map((channel: any) => {
-        balanceByChannelId[channel.channelId.toString()] = channel.value - channel.spent
-        stateByChannelId[channel.channelId.toString()] = channel.state
-        return channel.channelId.toString()
-      })
-      this.channelMetaStorage.findByIds(channelIds).then((metaChannels: any) => {
-        metaChannels.map((channel: any) => {
-          if (!isUndefined(balanceByChannelId[channel.channelId])) {
-            channel.balance = balanceByChannelId[channel.channelId]
-          }
-          if (!isUndefined(stateByChannelId[channel.channelId])) {
-            channel.state = stateByChannelId[channel.channelId]
-          }
-          if (change[channel.channelId]) {
-            for (let key in change[channel.channelId]) {
-              channel[key] = change[channel.channelId][key]
+  updateListChannels(change: Record<string, Partial<ChannelListItem>>) {
+    this.props
+      .workerProxy!.listChannels()
+      .then((channels) => {
+        const balanceByChannelId: Record<string, bigint> = {}
+        const stateByChannelId: Record<string, number> = {}
+        const channelIds = channels.map((channel: PaymentChannel) => {
+          balanceByChannelId[channel.channelId.toString()] = channel.value - channel.spent
+          stateByChannelId[channel.channelId.toString()] = channel.state
+          return channel.channelId.toString()
+        })
+        this.channelMetaStorage.findByIds(channelIds).then((metaChannels) => {
+          const preparedChannels = metaChannels.map((channel): ChannelListItem => {
+            const preparedChannel: ChannelListItem = {
+              ...channel,
+              state: 0,
+              canClose: false
             }
-          }
-          channel.canClose = true // FIXME
-          return channel
-        })
-        this.setState({
-          channels: metaChannels
+            if (balanceByChannelId[channel.channelId] !== undefined) {
+              preparedChannel.balance = balanceByChannelId[channel.channelId]
+            }
+            if (stateByChannelId[channel.channelId] !== undefined) {
+              preparedChannel.state = stateByChannelId[channel.channelId]
+            }
+            if (change[channel.channelId]) {
+              Object.assign(preparedChannel, change[channel.channelId])
+            }
+            preparedChannel.canClose = preparedChannel.state === 0
+            return preparedChannel
+          })
+          this.setState({ channels: preparedChannels })
         })
       })
-    })
+      .catch((_error: unknown) => {
+        this.setState({ channels: [] })
+      })
   }
 
-  getIcon (channel: any) {
-    return <Image avatar={true} src={channel.icon} size="mini"/>
+  setActiveChannel(channelId: string) {
+    const activeChannel = channelId === this.state.activeChannel ? "" : channelId
+    this.setState({ activeChannel })
   }
 
-  setActiveChannel (channelId: string) {
-    let activeChannel = channelId === this.state.activeChannel ? '' : channelId
-    this.setState({ activeChannel: activeChannel })
-  }
-
-  render () {
-    let className = style.listWrap + ' ' + style.scrollbarContainer
+  render() {
     return (
-      <List
-        className={className}
-        divided={true}
-        verticalAlign="middle"
-        style={{ margin: 0 }}
-      >
-      {this.state.channels.map((channel: any) => {
-        let isActiveChannel = (channel.channelId === this.state.activeChannel && channel.state === 0)
-        let itemId = isActiveChannel ? style.activeChannel : (channel.state === 1 ? style.closedChannel : '')
-        let styleItem = (channel.state === 1 || isActiveChannel) ? {} : { cursor: 'pointer' }
-        let clickItem = !isActiveChannel ? this.setActiveChannel.bind(this, channel.channelId) : null
-        let styleHeader = channel.state === 0 ? { cursor: 'pointer' } : {}
-        let clickHeader = isActiveChannel ? this.setActiveChannel.bind(this, channel.channelId) : null
+      <Stack gap="xs">
+        {this.state.channels.map((channel) => {
+          const isActiveChannel = channel.channelId === this.state.activeChannel && channel.state === 0
+          const clickable = channel.state !== 1 && !isActiveChannel
+          const clickItem = clickable ? this.setActiveChannel.bind(this, channel.channelId) : undefined
 
-        return (channel.state <= 1) &&
-          <List.Item
-            style={styleItem}
-            className={style.listItem}
-            id={itemId}
-            key={channel.channelId}
-            onClick={clickItem}
-          >
-              <List.Content floated="right">
-                <span className={style.channelBalance}>{channel.balance}</span>
-              </List.Content>
-              {this.getIcon(channel)}
-              <List.Content className={style.listContent}>
-                <List.Header
-                  className={style.listHeader}
-                  style={styleHeader}
-                  onClick={clickHeader}
-                >
-                  {channel.title}
-                </List.Header>
-                <List.Description className={style.listDesc}>{channel.desc}</List.Description>
-                <List.Description
-                  id={((isActiveChannel || (channel.state === 1 && channel.canClose)) ? style.buttonsActiveChannel : '')}
-                  style={{ display: 'none' }}
-                >
-                  <a onClick={this.closeChannelId.bind(this, channel)}>CLOSE</a>
-                </List.Description>
-              </List.Content>
-          </List.Item>
-      })}
-      </List>
+          if (channel.state > 1) {
+            return null
+          }
+
+          return (
+            <Paper
+              key={channel.channelId}
+              withBorder
+              p="sm"
+              radius="sm"
+              onClick={clickItem}
+              style={{ cursor: clickable ? "pointer" : "default", opacity: channel.state === 1 ? 0.6 : 1 }}
+            >
+              <Group justify="space-between" align="start" wrap="nowrap">
+                <Group align="start" wrap="nowrap">
+                  <Image
+                    src={channel.icon || resource("/frame/styles/images/channel.png")}
+                    fallbackSrc={resource("/frame/styles/images/channel.png")}
+                    w={24}
+                    h={24}
+                    radius="xl"
+                  />
+                  <div>
+                    <Text
+                      fw={600}
+                      onClick={isActiveChannel ? this.setActiveChannel.bind(this, channel.channelId) : undefined}
+                      style={{ cursor: channel.state === 0 ? "pointer" : "default" }}
+                    >
+                      {channel.title}
+                    </Text>
+                    <Text size="sm" c="dimmed">
+                      {channel.desc}
+                    </Text>
+                    {(isActiveChannel || (channel.state === 1 && channel.canClose)) && (
+                      <Anchor c="red" size="sm" onClick={this.closeChannelId.bind(this, channel)}>
+                        CLOSE
+                      </Anchor>
+                    )}
+                  </div>
+                </Group>
+                <Text fw={600}>{channel.balance?.toString() ?? "0"}</Text>
+              </Group>
+            </Paper>
+          )
+        })}
+      </Stack>
     )
   }
 }
 
-function mapStateToProps (state: FrameState, ownProps: ChannelsSubpageProps): ChannelsSubpageProps {
+function mapStateToProps(state: FrameState): ChannelsSubpageProps {
   return {
     lastUpdateDb: state.shared.lastUpdateDb,
-    web3: state.temp.workerProxy.web3,
     workerProxy: state.temp.workerProxy
   }
 }

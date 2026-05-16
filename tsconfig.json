@@ -1,30 +1,20 @@
 {
   "compilerOptions": {
-    "outDir": "dist/",
-    "target": "es2017",
-    "module": "commonjs",
-    "lib": ["es2017", "dom"],
+    "target": "ES2022",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "declaration": true,
+    "declarationDir": "dist/types",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "react",
-    "declarationDir": "dist/types",
-    "typeRoots": [
-      "node_modules/@types",
-      "node_modules/@machinomy",
-      "types"
-    ],
-    "experimentalDecorators": true
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["vite/client"]
   },
-  "include": [
-    "vynos",
-    "node_modules/*/index.d.ts"
-  ],
-  "exclude": [
-    "node_modules/homedir/index.d.ts",
-    "node_modules/@types/jasmine/index.d.ts",
-    "node_modules/@types/lodash/index.d.ts",
-    "node_modules/@types/react-hot-loader/index.d.ts"
-  ]
+  "include": ["vynos", "harness", "data"]
 }

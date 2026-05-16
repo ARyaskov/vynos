@@ -1,6 +1,6 @@
-import BackgroundController from './BackgroundController'
-import { JSONRPC, RequestPayload } from '../../lib/Payload'
-import { EndFunction } from '../../lib/StreamServer'
+import BackgroundController from "./BackgroundController"
+import { JSONRPC, RequestPayload } from "../../lib/Payload"
+import { EndFunction } from "../../lib/StreamServer"
 import {
   DidStoreMnemonicRequest,
   DidStoreMnemonicResponse,
@@ -27,115 +27,132 @@ import {
   ClearTransactionMetastorageRequest,
   ClearReduxPersistentStorageRequest,
   ClearChannelMetastorageRequest,
-  ClearMachinomyStorageRequest,
+  ClearChannelStorageRequest,
   ClearAccountInfoRequest
-} from '../../lib/rpc/yns'
-import { Writable } from 'readable-stream'
-import { SharedStateBroadcast, SharedStateBroadcastType } from '../../lib/rpc/SharedStateBroadcast'
-import {
-  BuyProcessEventBroadcast,
-  BuyProcessEvent,
-  buyProcessEventBroadcastType
-} from '../../lib/rpc/buyProcessEventBroadcast'
-import { WalletBuyArguments } from '../../lib/Vynos'
-import { ChannelMeta } from '../../lib/storage/ChannelMetaStorage'
-import bus from '../../lib/bus'
-import { DISPLAY_REQUEST } from '../../lib/constants'
-import { DisplayRequestBroadcast, DisplayRequestBroadcastType } from '../../lib/rpc/DisplayRequestBroadcast'
-import { Buffer } from 'safe-buffer'
+} from "../../lib/rpc/yns"
+import { SharedStateBroadcast, SharedStateBroadcastType } from "../../lib/rpc/SharedStateBroadcast"
+import { BuyProcessEventBroadcast, BuyProcessEvent, buyProcessEventBroadcastType } from "../../lib/rpc/buyProcessEventBroadcast"
+import { WalletBuyArguments } from "../../lib/Vynos"
+import { ChannelMeta } from "../../lib/storage/ChannelMetaStorage"
+import bus from "../../lib/bus"
+import { DISPLAY_REQUEST } from "../../lib/constants"
+import { DisplayRequestBroadcast, DisplayRequestBroadcastType } from "../../lib/rpc/DisplayRequestBroadcast"
+import { bytesToHex } from "viem"
+
+type Writable = {
+  write: (chunk: unknown) => void
+}
 
 export default class BackgroundHandler {
   controller: BackgroundController
 
-  constructor (controller: BackgroundController) {
+  constructor(controller: BackgroundController) {
     this.controller = controller
     this.handler = this.handler.bind(this)
   }
 
-  getSharedState (message: GetSharedStateRequest, next: Function, end: EndFunction) {
-    this.controller.getSharedState().then(sharedState => {
-      let response: GetSharedStateResponse = {
-        id: message.id,
-        jsonrpc: JSONRPC,
-        result: sharedState
-      }
-      end(null, response)
-    }).catch(end)
+  getSharedState(message: GetSharedStateRequest, next: Function, end: EndFunction) {
+    this.controller
+      .getSharedState()
+      .then((sharedState) => {
+        let response: GetSharedStateResponse = {
+          id: message.id,
+          jsonrpc: JSONRPC,
+          result: sharedState
+        }
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  genKeyring (message: GenKeyringRequest, next: Function, end: EndFunction) {
+  genKeyring(message: GenKeyringRequest, next: Function, end: EndFunction) {
     let password: string = message.params[0]
-    this.controller.genKeyring(password).then((mnemonic: string) => {
-      let response: GenKeyringResponse = {
-        id: message.id,
-        jsonrpc: message.jsonrpc,
-        result: mnemonic
-      }
-      end(null, response)
-    }).catch(end)
+    this.controller
+      .genKeyring(password)
+      .then((mnemonic: string) => {
+        let response: GenKeyringResponse = {
+          id: message.id,
+          jsonrpc: message.jsonrpc,
+          result: mnemonic
+        }
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  restoreWallet (message: RestoreWalletRequest, next: Function, end: EndFunction) {
+  restoreWallet(message: RestoreWalletRequest, next: Function, end: EndFunction) {
     let password: string = message.params[0]
     let type: string = message.params[1]
     let value: string = message.params[2]
-    this.controller.restoreWallet(password, type, value).then((ok: boolean) => {
-      let response: GenKeyringResponse = {
-        id: message.id,
-        jsonrpc: message.jsonrpc,
-        result: ok.toString()
-      }
-      end(null, response)
-    }).catch(end)
+    this.controller
+      .restoreWallet(password, type, value)
+      .then((ok: boolean) => {
+        let response: GenKeyringResponse = {
+          id: message.id,
+          jsonrpc: message.jsonrpc,
+          result: ok.toString()
+        }
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  didStoreMnemonic (message: DidStoreMnemonicRequest, next: Function, end: EndFunction) {
-    this.controller.didStoreMnemonic().then(() => {
-      let response: DidStoreMnemonicResponse = {
-        id: message.id,
-        jsonrpc: message.jsonrpc,
-        result: null
-      }
-      end(null, response)
-    }).catch(end)
+  didStoreMnemonic(message: DidStoreMnemonicRequest, next: Function, end: EndFunction) {
+    this.controller
+      .didStoreMnemonic()
+      .then(() => {
+        let response: DidStoreMnemonicResponse = {
+          id: message.id,
+          jsonrpc: message.jsonrpc,
+          result: null
+        }
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  unlockWallet (message: UnlockWalletRequest, next: Function, end: EndFunction) {
+  unlockWallet(message: UnlockWalletRequest, next: Function, end: EndFunction) {
     let password = message.params[0]
-    this.controller.unlockWallet(password).then(() => {
-      let response: UnlockWalletResponse = {
-        id: message.id,
-        jsonrpc: message.jsonrpc,
-        result: null
-      }
-      end(null, response)
-    }).catch(err => {
-      if (err.message === 'Incorrect password') {
+    this.controller
+      .unlockWallet(password)
+      .then(() => {
         let response: UnlockWalletResponse = {
           id: message.id,
           jsonrpc: message.jsonrpc,
-          result: null,
-          error: err.message
+          result: null
         }
         end(null, response)
-      } else {
-        end(err)
-      }
-    })
+      })
+      .catch((err) => {
+        if (err.message === "Incorrect password") {
+          let response: UnlockWalletResponse = {
+            id: message.id,
+            jsonrpc: message.jsonrpc,
+            result: null,
+            error: err.message
+          }
+          end(null, response)
+        } else {
+          end(err)
+        }
+      })
   }
 
-  lockWallet (message: LockWalletRequest, next: Function, end: EndFunction) {
-    this.controller.lockWallet().then(() => {
-      let response: LockWalletResponse = {
-        id: message.id,
-        jsonrpc: message.jsonrpc,
-        result: null
-      }
-      end(null, response)
-    }).catch(end)
+  lockWallet(message: LockWalletRequest, next: Function, end: EndFunction) {
+    this.controller
+      .lockWallet()
+      .then(() => {
+        let response: LockWalletResponse = {
+          id: message.id,
+          jsonrpc: message.jsonrpc,
+          result: null
+        }
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  initAccount (message: InitAccountRequest, next: Function, end: EndFunction) {
+  initAccount(message: InitAccountRequest, next: Function, end: EndFunction) {
     this.controller.awaitUnlock(() => {
       let response: InitAccountResponse = {
         id: message.id,
@@ -146,7 +163,7 @@ export default class BackgroundHandler {
     })
   }
 
-  rememberPage (message: RememberPageRequest, next: Function, end: EndFunction) {
+  rememberPage(message: RememberPageRequest, next: Function, end: EndFunction) {
     let path = message.params[0]
     this.controller.rememberPage(path)
     let response: RememberPageResponse = {
@@ -157,72 +174,81 @@ export default class BackgroundHandler {
     end(null, response)
   }
 
-  resolveTransaction (message: TransactonResolved, next: Function, end: EndFunction) {
+  resolveTransaction(message: TransactonResolved, next: Function, end: EndFunction) {
     this.controller.resolveTransaction()
     end(null)
   }
 
-  changeNetwork (message: ChangeNetworkRequest, next: Function, end: EndFunction) {
+  changeNetwork(message: ChangeNetworkRequest, next: Function, end: EndFunction) {
     let response: ChangeNetworkResponse = {
       id: message.id,
       jsonrpc: message.jsonrpc,
-      result: 'ok'
+      result: "ok"
     }
 
-    this.controller.changeNetwork().then(() => {
-      end(null, response)
-    }).catch(end)
+    this.controller
+      .changeNetwork()
+      .then(() => {
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  getPrivateKeyHex (message: GetPrivateKeyHexRequest, next: Function, end: EndFunction) {
-    this.controller.getPrivateKey().then((buffer: Buffer) => {
-      let response: GetPrivateKeyHexResponse = {
-        id: message.id,
-        jsonrpc: message.jsonrpc,
-        result: buffer.toString('hex')
-      }
-      end(null, response)
-    }).catch(end)
+  getPrivateKeyHex(message: GetPrivateKeyHexRequest, next: Function, end: EndFunction) {
+    this.controller
+      .getPrivateKey()
+      .then((privateKey) => {
+        let response: GetPrivateKeyHexResponse = {
+          id: message.id,
+          jsonrpc: message.jsonrpc,
+          result: bytesToHex(privateKey).slice(2)
+        }
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  setPreferences (message: SetPreferencesRequest, next: Function, end: EndFunction) {
+  setPreferences(message: SetPreferencesRequest, next: Function, end: EndFunction) {
     let preferences = message.params[0]
-    this.controller.setPreferences(preferences).then(() => {
-      let response: SetPreferencesResponse = {
-        id: message.id,
-        jsonrpc: message.jsonrpc,
-        result: null
-      }
-      end(null, response)
-    }).catch(end)
+    this.controller
+      .setPreferences(preferences)
+      .then(() => {
+        let response: SetPreferencesResponse = {
+          id: message.id,
+          jsonrpc: message.jsonrpc,
+          result: null
+        }
+        end(null, response)
+      })
+      .catch(end)
   }
 
-  clearChannelMetastorage (message: ClearChannelMetastorageRequest, next: Function, end: EndFunction) {
+  clearChannelMetastorage(message: ClearChannelMetastorageRequest, next: Function, end: EndFunction) {
     this.controller.clearChannelMetastorage()
     end(null)
   }
 
-  clearTransactionMetastorage (message: ClearTransactionMetastorageRequest, next: Function, end: EndFunction) {
+  clearTransactionMetastorage(message: ClearTransactionMetastorageRequest, next: Function, end: EndFunction) {
     this.controller.clearTransactionMetastorage()
     end(null)
   }
 
-  clearReduxPersistentStorage (message: ClearReduxPersistentStorageRequest, next: Function, end: EndFunction) {
+  clearReduxPersistentStorage(message: ClearReduxPersistentStorageRequest, next: Function, end: EndFunction) {
     this.controller.clearReduxPersistentStorage()
     end(null)
   }
 
-  clearMachinomyStorage (message: ClearMachinomyStorageRequest, next: Function, end: EndFunction) {
-    this.controller.clearMachinomyStorage()
+  clearChannelStorage(message: ClearChannelStorageRequest, next: Function, end: EndFunction) {
+    this.controller.clearChannelStorage()
     end(null)
   }
 
-  clearAccountInfo (message: ClearAccountInfoRequest, next: Function, end: EndFunction) {
+  clearAccountInfo(message: ClearAccountInfoRequest, next: Function, end: EndFunction) {
     this.controller.clearAccountInfo()
     end(null)
   }
 
-  handler (message: RequestPayload, next: Function, end: EndFunction) {
+  handler(message: RequestPayload, next: Function, end: EndFunction) {
     if (GetSharedStateRequest.match(message)) {
       this.getSharedState(message, next, end)
     } else if (GenKeyringRequest.match(message)) {
@@ -253,8 +279,8 @@ export default class BackgroundHandler {
       this.clearTransactionMetastorage(message, next, end)
     } else if (ClearReduxPersistentStorageRequest.match(message)) {
       this.clearReduxPersistentStorage(message, next, end)
-    } else if (ClearMachinomyStorageRequest.match(message)) {
-      this.clearMachinomyStorage(message, next, end)
+    } else if (ClearChannelStorageRequest.match(message)) {
+      this.clearChannelStorage(message, next, end)
     } else if (ClearAccountInfoRequest.match(message)) {
       this.clearAccountInfo(message, next, end)
     } else {
@@ -262,8 +288,8 @@ export default class BackgroundHandler {
     }
   }
 
-  broadcastSharedState (stream: Writable) {
-    this.controller.didChangeSharedState(sharedState => {
+  broadcastSharedState(stream: Writable) {
+    this.controller.didChangeSharedState((sharedState) => {
       let message: SharedStateBroadcast = {
         id: SharedStateBroadcastType,
         jsonrpc: JSONRPC,
@@ -273,7 +299,7 @@ export default class BackgroundHandler {
     })
   }
 
-  broadcastOnDisplayRequest (stream: Writable) {
+  broadcastOnDisplayRequest(stream: Writable) {
     bus.on(DISPLAY_REQUEST, (isDisplay?: boolean) => {
       if (isDisplay === undefined) {
         isDisplay = true
@@ -287,19 +313,21 @@ export default class BackgroundHandler {
     })
   }
 
-  broadcastBuyProcessEvent (stream: Writable) {
+  broadcastBuyProcessEvent(stream: Writable) {
     this.controller.onBuyProcessEvent((typeOfMessage: BuyProcessEvent, args: WalletBuyArguments, token?: string, channel?: ChannelMeta) => {
       let message: BuyProcessEventBroadcast = {
         id: buyProcessEventBroadcastType,
         jsonrpc: JSONRPC,
         type: typeOfMessage,
-        result: [args, token || '',
-          channel ||
-            {
-              channelId: '',
-              title: '',
-              host: ''
-            }]
+        result: [
+          args,
+          token || "",
+          channel || {
+            channelId: "",
+            title: "",
+            host: ""
+          }
+        ]
       }
       stream.write(message)
     })

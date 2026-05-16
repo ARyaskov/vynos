@@ -1,5 +1,5 @@
-import { EventEmitter } from 'events'
+import TinyEmitter from "./TinyEmitter"
 
-const bus = new EventEmitter()
+const bus = new TinyEmitter()
 
 export default bus

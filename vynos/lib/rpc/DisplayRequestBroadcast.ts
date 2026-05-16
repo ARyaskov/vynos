@@ -1,8 +1,8 @@
-import { ResponsePayload } from '../Payload'
+import { ResponsePayload } from "../Payload"
 
-export const DisplayRequestBroadcastType = 'worker/broadcast/DisplayRequest'
+export const DisplayRequestBroadcastType = "worker/broadcast/DisplayRequest"
 
 export interface DisplayRequestBroadcast extends ResponsePayload {
-  id: typeof DisplayRequestBroadcastType,
+  id: typeof DisplayRequestBroadcastType
   result: boolean
 }

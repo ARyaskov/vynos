@@ -1,103 +1,112 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+  <head>
     <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="utf-8" />
+    <link rel="icon" href="data:," />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha256-LA89z+k9fjgMKQ/kq4OO2Mrf8VltYml/VES+Rg0fh20=" crossorigin="anonymous" />
-    <link rel="shortcut icon" type="image/png" href="/favicon.png"/>
-    <!-- Vynos -->
-    <script src="http://localhost:9001/vynos.js"></script>
-    <script src="/harness.js"></script>
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha256-LA89z+k9fjgMKQ/kq4OO2Mrf8VltYml/VES+Rg0fh20="
+      crossorigin="anonymous"
+    />
+    <script type="module" src="/harness/harness.ts"></script>
+  </head>
+  <body>
     <div class="container">
-        <div class="row">
-            <div class="col">
-                <h1>
-                  <a href="/">Machinomy Wallet</a>
-                </h1>
-              <p>
-                <button name="display" id="display">Display</button>
-              </p>
-                <p>
-                    <p>Account Address: <span id="account_address">Loading...</span></p>
-                </p>
-                <h4>Open channel for eth</h4>
-                <div>
-                    <form id="open_channel">
-                        <p>Receiver Address: <input type="text" id="receiver_address" value="0x363dfeAfB265A1e98403A7613A3325Ec00FaF222"/></p>
-                        <p><button type="submit">Open Channel, 0.0001 Eth</button></p>
-                        <p>Channel id: <span id="open_channel_id">n/a</span></p>
-                        <p>
-                            Vynos Buy Response:
-                            <pre><code id="payment-channel-code">N/A</code></pre>
-                            <pre><code id="payment-token-code">N/A</code></pre>
-                        </p>
-                    </form>
-                </div>
-                <div>
-                  <form id="close_channel">
-                    <p><button type="submit">Start settle channel</button></p>
-                  </form>
-                </div>
-
-                <div>
-                  <form id="pay_in_channel">
-                    <p>Amount: <input type="text" id="payment-amount" /> Eth</p>
-                    <p><button type="submit">Generate payment</button></p>
-                    <p>
-                      Payment:
-                    <pre><code id="payment-code">N/A</code></pre>
-                    </p>
-                  </form>
-                </div>
-
-                <hr />
-
-                <div>
-                  <form id="finish_settle">
-                    <p><button type="submit">Finish settle channel</button></p>
-                  </form>
-                </div>
-
-              <hr />
-              <h4>Open channel for tokens</h4>
-              <span>(You can use Rinkeby network (<a href="https://rinkeby.etherscan.io/address/0xf4222acef04d86f7304b8364734f22c00108d0cd">rinkeby.etherscan.io</a>) for pre-deployed token contract) with</span><br/>
-              <span>Sender account is <code>0xf4222acef04d86f7304b8364734f22c00108d0cd</code></span><br/>
-              <span>Sender mnemonic is <code>peanut giggle name tree canoe tube render ketchup survey segment army will</code></span><br/>
-              <span>Token contract address is <code>0x4966f0cfd7ca6961b9dd75e2ef237547a307ac51</code></span><br/>
+      <div class="row">
+        <div class="col">
+          <h1>
+            <a href="/">Vynos Wallet</a>
+          </h1>
+          <p>
+            <button name="display" id="display">Display</button>
+          </p>
+          <p>Account Address: <span id="account_address">Loading...</span></p>
+          <h4>Open channel for eth</h4>
+          <div>
+            <form id="open_channel">
+              <p>Receiver Address: <input type="text" id="receiver_address" value="0x363dfeAfB265A1e98403A7613A3325Ec00FaF222" /></p>
+              <p><button type="submit">Open Channel, 0.0001 Eth</button></p>
+              <p>Channel id: <span id="open_channel_id">n/a</span></p>
               <div>
-                <form id="open_channel_tokens">
-                  <p>Token contract address: <input type="text" id="token_contract_address" value="0x4966f0cfd7ca6961b9dd75e2ef237547a307ac51"/></p>
-                  <p>Receiver address: <input type="text" id="token_receiver_address" value="0xfaafc4b9a532c0e95c70b766bf5fb58e16b547d9"/></p>
-                  <p><button type="submit">Open Channel for 50 tokens, deposit 5 tokens</button></p>
-                  <p>Channel id: <span id="open_channel_id_tokens">n/a</span></p>
-                  <p>
-                    Vynos Buy Response:
-                  <pre><code id="payment-channel-code-tokens">N/A</code></pre>
-                  <pre><code id="payment-token-code-tokens">N/A</code></pre>
-                  </p>
-                </form>
+                <p>Vynos Buy Response:</p>
+                <pre><code id="payment-channel-code">N/A</code></pre>
+                <pre><code id="payment-token-code">N/A</code></pre>
               </div>
-              <h4>Sign message</h4>
+            </form>
+          </div>
+          <div>
+            <form id="close_channel">
+              <p><button type="submit">Start settle channel</button></p>
+            </form>
+          </div>
+
+          <div>
+            <form id="pay_in_channel">
+              <p>Amount: <input type="text" id="payment-amount" /> Eth</p>
+              <p><button type="submit">Generate payment</button></p>
               <div>
-                <form id="sign_message_form">
-                  <p>Message: <input type="text" id="sign_message_input" value="vynos"/></p>
-                  <p><button type="submit">Sign message</button></p>
-                </form>
+                <p>Payment:</p>
+                <pre><code id="payment-code">N/A</code></pre>
               </div>
-              <hr />
-              <h4>Do some restricted requests from Client to Service Worker</h4>
+            </form>
+          </div>
+
+          <hr />
+
+          <div>
+            <form id="finish_settle">
+              <p><button type="submit">Finish settle channel</button></p>
+            </form>
+          </div>
+
+          <hr />
+          <h4>Open channel for tokens</h4>
+          <span
+            >(You can use Rinkeby network (<a href="https://rinkeby.etherscan.io/address/0xf4222acef04d86f7304b8364734f22c00108d0cd"
+              >rinkeby.etherscan.io</a
+            >) for pre-deployed token contract) with</span
+          ><br />
+          <span>Sender account is <code>0xf4222acef04d86f7304b8364734f22c00108d0cd</code></span
+          ><br />
+          <span>Sender mnemonic is <code>peanut giggle name tree canoe tube render ketchup survey segment army will</code></span
+          ><br />
+          <span>Token contract address is <code>0x4966f0cfd7ca6961b9dd75e2ef237547a307ac51</code></span
+          ><br />
+          <div>
+            <form id="open_channel_tokens">
+              <p>Token contract address: <input type="text" id="token_contract_address" value="0x4966f0cfd7ca6961b9dd75e2ef237547a307ac51" /></p>
+              <p>Receiver address: <input type="text" id="token_receiver_address" value="0xfaafc4b9a532c0e95c70b766bf5fb58e16b547d9" /></p>
+              <p><button type="submit">Open Channel for 50 tokens, deposit 5 tokens</button></p>
+              <p>Channel id: <span id="open_channel_id_tokens">n/a</span></p>
               <div>
-                <form id="test_unsafe_requests_form">
-                  <p><button type="submit">Do damage</button></p>
-                </form>
+                <p>Vynos Buy Response:</p>
+                <pre><code id="payment-channel-code-tokens">N/A</code></pre>
+                <pre><code id="payment-token-code-tokens">N/A</code></pre>
               </div>
-              <hr />
+            </form>
+          </div>
+          <h4>Sign message</h4>
+          <div>
+            <form id="sign_message_form">
+              <p>Message: <input type="text" id="sign_message_input" value="vynos" /></p>
+              <p><button type="submit">Sign message</button></p>
+            </form>
+          </div>
+          <hr />
+          <h4>Do some restricted requests from Client to Service Worker</h4>
+          <div>
+            <form id="test_unsafe_requests_form">
+              <p><button type="submit">Do damage</button></p>
+            </form>
+          </div>
+          <hr />
         </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>

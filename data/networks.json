@@ -1,5 +1,4 @@
 {
-  "Ropsten": "https://ropsten.infura.io/T1S8a0bkyrGD7jxJBgeH",
-  "Rinkeby": "https://rinkeby.infura.io/T1S8a0bkyrGD7jxJBgeH",
-  "Main": "https://mainnet.infura.io/T1S8a0bkyrGD7jxJBgeH"
+  "Sepolia": "https://eth-sepolia.g.alchemy.com/v2/",
+  "Main": "https://eth-mainnet.g.alchemy.com/v2/"
 }

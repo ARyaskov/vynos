@@ -1,17 +1,17 @@
-import { Duplex, Writable, Readable } from 'readable-stream'
+import { Duplex } from "./duplex"
 import {
   ClearAccountInfoRequest,
   ClearChannelMetastorageRequest,
-  ClearMachinomyStorageRequest,
+  ClearChannelStorageRequest,
   ClearReduxPersistentStorageRequest,
   ClearTransactionMetastorageRequest,
   GetPrivateKeyHexRequest
-} from './rpc/yns'
+} from "./rpc/yns"
 
 const restrictedMethodsForClient = [
   GetPrivateKeyHexRequest.method,
   ClearAccountInfoRequest.method,
-  ClearMachinomyStorageRequest.method,
+  ClearChannelStorageRequest.method,
   ClearReduxPersistentStorageRequest.method,
   ClearChannelMetastorageRequest.method,
   ClearTransactionMetastorageRequest.method
@@ -19,23 +19,23 @@ const restrictedMethodsForClient = [
 
 export type Target = Window | ServiceWorker | null
 
-function isWindow (target: Target): target is Window {
-  return !!((target as Window).window)
+function isWindow(target: Target): target is Window {
+  return !!(target as Window).window
 }
 
-function isServiceWorker (target: Target): target is ServiceWorker {
+function isServiceWorker(target: Target): target is ServiceWorker {
   return target instanceof ServiceWorker
 }
 
 export type PostStreamOptions = {
-  sourceName: string,
-  targetName: string,
-  target?: Target,
-  source?: EventTarget,
+  sourceName: string
+  targetName: string
+  target?: Target
+  source?: EventTarget
   origin?: string
 }
 
-export default class PostStream extends Duplex implements Writable, Readable {
+export default class PostStream extends Duplex {
   sourceName: string
   targetName: string
   sourceWindow: EventTarget
@@ -46,8 +46,9 @@ export default class PostStream extends Duplex implements Writable, Readable {
   readableHighWaterMark: number
   writableLength: number
   readableLength: number
+  private messageListener: EventListener
 
-  constructor (options: PostStreamOptions) {
+  constructor(options: PostStreamOptions) {
     super({ objectMode: true })
 
     this.sourceName = options.sourceName
@@ -55,7 +56,7 @@ export default class PostStream extends Duplex implements Writable, Readable {
     this.sourceWindow = options.source || window
     this.targetWindow = options.target || window
 
-    this.origin = (options.target ? '*' : window.location.origin)
+    this.origin = options.target ? "*" : window.location.origin
 
     this.highWaterMark = 16
     this.writableHighWaterMark = 16
@@ -63,56 +64,62 @@ export default class PostStream extends Duplex implements Writable, Readable {
     this.writableLength = 16
     this.readableLength = 16
 
-    this.sourceWindow.addEventListener('message', this.onMessage.bind(this))
+    this.messageListener = (event: Event) => this.onMessage(event as MessageEvent)
+    this.sourceWindow.addEventListener("message", this.messageListener)
   }
 
-  onMessage (event: MessageEvent) {
+  onMessage(event: MessageEvent) {
     let message = event.data
 
-    let correctOrigin = this.origin === '*' || event.origin === this.origin
+    let correctOrigin = this.origin === "*" || event.origin === this.origin
     let correctSource = event.source === this.targetWindow
 
-    if (correctOrigin && correctSource && typeof message === 'object') {
+    if (correctOrigin && correctSource && typeof message === "object") {
       if (message.target === this.sourceName && message.data) {
         try {
           this.push(message.data)
         } catch (error) {
-          this.emit('error', error)
+          this.emit("error", error)
         }
       }
     }
   }
 
-  _read () {
+  _read() {
     // Do Nothing
   }
 
-  _destroy (err: Error, callback: Function) {
-    this.sourceWindow.removeEventListener('message', this.onMessage.bind(this))
+  _destroy(err: Error, callback: Function) {
+    this.sourceWindow.removeEventListener("message", this.messageListener)
     callback()
   }
 
-  _write (data: any, encoding: string, next: () => void) {
+  _write(data: unknown, encoding: string, next: () => void) {
     let message = {
       target: this.targetName,
       data: data
     }
     if (isWindow(this.targetWindow)) {
-      if (restrictedMethodsForClient.includes(message.data.method)) {
-        console.error('Client requested restricted method: ' + message.data.method)
+      const method = typeof data === "object" && data !== null && "method" in data ? (data as { method?: unknown }).method : undefined
+      if (typeof method === "string" && restrictedMethodsForClient.includes(method)) {
+        console.error("Client requested restricted method: " + method)
       } else {
         this.targetWindow.postMessage(message, this.origin)
       }
     } else if (isServiceWorker(this.targetWindow)) {
       this.targetWindow.postMessage(message)
     } else {
-      throw new Error('Can not write to empty target')
+      throw new Error("Can not write to empty target")
     }
     next()
   }
 
-  end () {
-    super.end()
-    this.sourceWindow.removeEventListener('message', this.onMessage.bind(this))
+  end(cb?: () => void): this
+  end(chunk: unknown, cb?: () => void): this
+  end(chunk: unknown, encoding?: string, cb?: () => void): this
+  end(...args: unknown[]): this {
+    super.end(...args)
+    this.sourceWindow.removeEventListener("message", this.messageListener)
+    return this
   }
 }

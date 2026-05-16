@@ -1,27 +1,16 @@
-import * as React from 'react'
-import { connect } from 'react-redux'
-import { Container, Menu, Form, Button, Icon } from 'semantic-ui-react'
-
-const web3Utils = require('web3-utils')
-
-const style = require('../styles/ynos.css')
+import * as React from "react"
+import { Anchor, Box, Button, Container, Group, Paper, PasswordInput, Stack, Text, Textarea } from "@mantine/core"
+import { useSelector } from "react-redux"
+import { isHex } from "viem"
+import * as bip39 from "bip39"
+import { MINIMUM_PASSWORD_LENGTH, PASSWORD_CONFIRMATION_HINT_TEXT, PASSWORD_HINT_TEXT } from "../constants"
+import WorkerProxy from "../WorkerProxy"
+import { FrameState } from "../redux/FrameState"
 
 const MAX_FILE_SIZE = 1048576 // 1mb
 
-import { MINIMUM_PASSWORD_LENGTH, PASSWORD_CONFIRMATION_HINT_TEXT, PASSWORD_HINT_TEXT } from '../constants'
-import WorkerProxy from '../WorkerProxy'
-import { FrameState } from '../redux/FrameState'
-import * as bip39 from 'bip39'
-
-export interface OwnRestorePageProps {
+export interface RestorePageProps {
   showVerifiable?: () => void
-}
-
-export interface RestorePageStateProps {
-  workerProxy: WorkerProxy
-}
-
-export interface RestorePageProps extends RestorePageStateProps {
   goBack: () => void
 }
 
@@ -39,307 +28,248 @@ export interface RestorePageState {
   incorrectKeyFile?: boolean
 }
 
-class RestorePage extends React.Component<RestorePageProps & OwnRestorePageProps, RestorePageState> {
-  constructor (props: RestorePageProps & OwnRestorePageProps) {
-    super(props)
-    this.state = { incorrectKeyFile: false }
-    this.onDrag = this.onDrag.bind(this)
-    this.onDrop = this.onDrop.bind(this)
-  }
+function clickInpFile() {
+  document.getElementById("inpFilePrivKey")?.click()
+}
 
-  static clickInpFile () {
-    document.getElementById('inpFilePrivKey')!.click()
-  }
+export default function RestorePage({ goBack, showVerifiable }: RestorePageProps): React.JSX.Element {
+  const workerProxy = useSelector((state: FrameState) => state.temp.workerProxy)
+  const [state, setState] = React.useState<RestorePageState>({ incorrectKeyFile: false })
 
-  componentWillMount () {
-    document.addEventListener('dragover', this.onDrag, false)
-    document.addEventListener('drop', this.onDrop, false)
-  }
-
-  componentWillUnmount () {
-    document.removeEventListener('dragover', this.onDrag, false)
-    document.removeEventListener('drop', this.onDrop, false)
-  }
-
-  goBack () {
-    this.props.goBack()
-  }
-
-  handleSubmit (ev: React.FormEvent<HTMLFormElement>) {
-    ev.preventDefault()
-    this.setState({ incorrectKeyFile: false })
-    let state = this.state
-    if (this.isValid() && state.password) {
-      if (state.fileIsHex && state.fileValue) {
-        this.props.workerProxy.restoreWallet(state.password, 'hex', state.fileValue).then(async (ok: string) => {
-          if (ok === 'true') {
-            this.clearIndexedDB()
-            this.goBack()
-          } else {
-            this.setState({ incorrectKeyFile: true })
-          }
-        })
-      } else if (state.fileIsJSON && state.fileValue) {
-        this.props.workerProxy.restoreWallet(state.password, 'json', state.fileValue).then(async (ok: string) => {
-          if (ok === 'true') {
-            this.clearIndexedDB()
-            this.goBack()
-          } else {
-            this.setState({ incorrectKeyFile: true })
-          }
-        })
-      } else if (this.isValid() && state.seed) {
-        this.props.workerProxy.restoreWallet(state.password, 'seed', state.seed).then(async () => {
-          this.clearIndexedDB()
-          this.goBack()
-        })
-      }
-    }
-  }
-
-  isValid () {
-    let passwordError = this.state.passwordError
-    if (this.state.password && this.state.password.length < MINIMUM_PASSWORD_LENGTH) {
-      passwordError = PASSWORD_HINT_TEXT
-      this.setState({
-        passwordError: passwordError
-      })
-    }
-
-    let passwordConfirmationError = this.state.passwordConfirmationError
-    if (this.state.passwordConfirmation !== this.state.password && this.state.passwordConfirmation) {
-      passwordConfirmationError = PASSWORD_CONFIRMATION_HINT_TEXT
-      this.setState({
-        passwordConfirmationError: passwordConfirmationError
-      })
-    }
-
-    let seedError = this.state.seedError
-    if (this.state.seed && !bip39.validateMnemonic(this.state.seed)) {
-      seedError = 'Probably mistyped seed phrase'
-      this.setState({
-        seedError: seedError
-      })
-    }
-
-    return !(passwordError || passwordConfirmationError || seedError)
-  }
-
-  handleChangeSeed (ev: React.ChangeEvent<EventTarget>) {
-    let value = (ev.target as HTMLInputElement).value
-    this.setValue({
-      seed: value
-    })
-  }
-
-  handleChangePassword (ev: React.ChangeEvent<EventTarget>) {
-    let value = (ev.target as HTMLInputElement).value
-    this.setValue({
-      password: value
-    })
-  }
-
-  handleChangePasswordConfirmation (ev: React.ChangeEvent<EventTarget>) {
-    let value = (ev.target as HTMLInputElement).value
-    this.setValue({
-      passwordConfirmation: value
-    })
-  }
-
-  setValue (state: RestorePageState) {
-    let base = {
+  const setValue = React.useCallback((value: Partial<RestorePageState>) => {
+    setState((prev) => ({
+      ...prev,
       passwordError: undefined,
       passwordConfirmationError: undefined,
-      seedError: undefined
-    }
-    let next = Object.assign(base, state)
-    this.setState(next)
-  }
+      seedError: undefined,
+      ...value
+    }))
+  }, [])
 
-  renderSeedInput () {
-    if (this.state.fileIsHex || this.state.fileIsJSON) {
-      return null
-    }
-
-    let className = style.mnemonicInput + ' ' + (this.state.seedError ? style.inputError : '')
-    return (
-      <textarea
-        placeholder="Seed Phrase"
-        className={className}
-        rows={3}
-        onChange={this.handleChangeSeed.bind(this)}
-      />
-    )
-  }
-
-  renderSeedHint () {
-    if (this.state.fileIsHex || this.state.fileIsJSON) {
-      return null
-    }
-
-    if (this.state.seedError) {
-      return <span className={style.errorText}><i className={style.vynosInfo}/> {this.state.seedError}</span>
-    } else {
-      return <span className={style.passLenText}/>
-    }
-  }
-
-  renderPasswordInput () {
-    let className = this.state.passwordError ? style.inputError : ''
-    return (
-      <input
-        type="password"
-        placeholder="Password"
-        className={className}
-        autoComplete="new-password"
-        onChange={this.handleChangePassword.bind(this)}
-      />
-    )
-  }
-
-  renderPasswordHint () {
-    if (this.state.passwordError) {
-      return <span className={style.errorText}><i className={style.vynosInfo}/> {this.state.passwordError}</span>
-    } else {
-      return <span className={style.passLenText}>At least {MINIMUM_PASSWORD_LENGTH} characters</span>
-    }
-  }
-
-  renderPasswordConfirmationInput () {
-    let className = this.state.passwordConfirmationError ? style.inputError : ''
-    return (
-      <input
-        type="password"
-        placeholder="Password Confirmation"
-        className={className}
-        autoComplete="new-password"
-        onChange={this.handleChangePasswordConfirmation.bind(this)}
-      />
-    )
-  }
-
-  renderPasswordConfirmationHint () {
-    if (this.state.passwordConfirmationError) {
-      return <span className={style.errorText}><i className={style.vynosInfo}/> {this.state.passwordConfirmationError}</span>
-    } else {
-      return <span className={style.errorText}>&nbsp;</span>
-    }
-  }
-
-  renderPrivKeyText () {
-    if (this.state.fileIsHex) {
-      return <div>And now set the password</div>
-    } else if (this.state.fileIsJSON) {
-      return <div>And now set the password for unlocking</div>
-    } else {
-      return <a onClick={RestorePage.clickInpFile} style={{ float: 'right' }}>Select private key file</a>
-    }
-
-  }
-
-  changeInputFile (event: React.ChangeEvent<HTMLInputElement>) {
-    let files: FileList | null = event.target.files
-    if (files && files.length) {
-      this.checkFile(files[0])
-    } else {
-      this.setState({ fileError: '', fileIsHex: false, fileIsJSON: false, incorrectKeyFile: false })
-    }
-  }
-
-  checkFile (file: File) {
+  const checkFile = React.useCallback((file: File) => {
     if (file.size > MAX_FILE_SIZE) {
-      this.setState({ fileError: 'File too large', fileIsHex: false, fileIsJSON: false })
+      setState((prev) => ({ ...prev, fileError: "File too large", fileIsHex: false, fileIsJSON: false }))
       return
     }
 
-    let reader = new FileReader()
-    reader.onload = (file: any) => {
-      let f = file.target.result
+    const reader = new FileReader()
+    reader.onload = (event: ProgressEvent<FileReader>) => {
+      const fileData = event.target?.result
+      if (typeof fileData !== "string") {
+        setState((prev) => ({ ...prev, fileError: "Unable to read file", fileIsHex: false, fileIsJSON: false }))
+        return
+      }
 
-      if (web3Utils.isHex(f)) {
-        this.setState({ fileIsHex: true, fileValue: f })
+      if (isHex(fileData)) {
+        setState((prev) => ({ ...prev, fileIsHex: true, fileIsJSON: false, fileValue: fileData, fileError: "" }))
       } else {
-        this.setState({ fileIsHex: false })
-
         try {
-          this.setState({ fileIsJSON: true, fileValue: f })
-        } catch (e) {
-          this.setState({ fileIsJSON: false })
+          JSON.parse(fileData)
+          setState((prev) => ({ ...prev, fileIsHex: false, fileIsJSON: true, fileValue: fileData, fileError: "" }))
+        } catch {
+          setState((prev) => ({ ...prev, fileIsHex: false, fileIsJSON: false, fileError: "Unsupported key file format" }))
         }
       }
     }
     reader.readAsText(file)
-  }
+  }, [])
 
-  onDrag (event: any) {
-    event.stopPropagation()
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'copy'
-  }
-
-  onDrop (event: any) {
-    event.stopPropagation()
-    event.preventDefault()
-    let files: FileList | null = event.dataTransfer.files
-    if (files && files.length) {
-      this.checkFile(files[0])
-    } else {
-      this.setState({ fileError: '', fileIsHex: false, fileIsJSON: false, incorrectKeyFile: false })
+  React.useEffect(() => {
+    const onDrag = (event: DragEvent) => {
+      if (!event.dataTransfer) return
+      event.stopPropagation()
+      event.preventDefault()
+      event.dataTransfer.dropEffect = "copy"
     }
-  }
 
-  clearIndexedDB () {
-    this.props.workerProxy.clearAccountInfo()
-  }
+    const onDrop = (event: DragEvent) => {
+      if (!event.dataTransfer) return
+      event.stopPropagation()
+      event.preventDefault()
+      const files = event.dataTransfer.files
+      if (files && files.length) {
+        checkFile(files[0])
+      } else {
+        setState((prev) => ({ ...prev, fileError: "", fileIsHex: false, fileIsJSON: false, incorrectKeyFile: false }))
+      }
+    }
 
-  render () {
-    return (
-      <div>
-        <Menu className={style.clearBorder}>
-          <Menu.Item link={true} className={style.menuIntoOneItemFluid} onClick={this.goBack.bind(this)}>
-            <i className={style.vynosArrowBack}/> Restore a Wallet
-          </Menu.Item>
-        </Menu>
-        <Container textAlign="center">
-          <Form className={style.encryptionForm} onSubmit={this.handleSubmit.bind(this)}>
-            <div style={{ marginBottom: '10px' }}>
-              {(this.state.incorrectKeyFile) ?
-                <span style={{ fontSize: '16px' }} className={style.errorText}>Incorrect key file</span> : ''}
-            </div>
-            <Form.Field className={style.clearIndent}>
-              {this.renderSeedInput()}
-              {this.renderSeedHint()}
-              {this.renderPrivKeyText()}
-            </Form.Field>
-            <div><span className={style.errorText}>{this.state.fileError}</span></div>
-            <input
-              type="file"
-              id={'inpFilePrivKey'}
-              style={{ display: 'none' }}
-              onChange={this.changeInputFile.bind(this)}
-            />
-            <Form.Field className={style.clearIndent}>
-              {this.renderPasswordInput()}
-              {this.renderPasswordHint()}
-            </Form.Field>
-            <Form.Field className={style.clearIndent}>
-              {this.renderPasswordConfirmationInput()}
-              {this.renderPasswordConfirmationHint()}
-            </Form.Field>
-            <Button type="submit" content="Restore" primary={true} className={style.buttonNav}/>
-          </Form>
-        </Container>
-        <a onClick={this.props.showVerifiable} id={style.shieldIcon}><Icon name={'shield'} size={'large'}/></a>
-      </div>
-    )
-  }
+    document.addEventListener("dragover", onDrag, false)
+    document.addEventListener("drop", onDrop, false)
+    return () => {
+      document.removeEventListener("dragover", onDrag, false)
+      document.removeEventListener("drop", onDrop, false)
+    }
+  }, [checkFile])
+
+  const isValid = React.useCallback((current: RestorePageState): boolean => {
+    let passwordError = current.passwordError
+    if (current.password && current.password.length < MINIMUM_PASSWORD_LENGTH) {
+      passwordError = PASSWORD_HINT_TEXT
+    }
+
+    let passwordConfirmationError = current.passwordConfirmationError
+    if (current.passwordConfirmation !== current.password && current.passwordConfirmation) {
+      passwordConfirmationError = PASSWORD_CONFIRMATION_HINT_TEXT
+    }
+
+    let seedError = current.seedError
+    if (current.seed && !bip39.validateMnemonic(current.seed)) {
+      seedError = "Probably mistyped seed phrase"
+    }
+
+    setState((prev) => ({
+      ...prev,
+      passwordError,
+      passwordConfirmationError,
+      seedError
+    }))
+
+    return !(passwordError || passwordConfirmationError || seedError)
+  }, [])
+
+  const clearIndexedDB = React.useCallback(() => {
+    workerProxy.clearAccountInfo()
+  }, [workerProxy])
+
+  const handleSubmit = React.useCallback(
+    async (ev: React.FormEvent<HTMLFormElement>) => {
+      ev.preventDefault()
+      setState((prev) => ({ ...prev, incorrectKeyFile: false }))
+
+      const current = state
+      if (!current.password || !isValid(current)) {
+        return
+      }
+
+      if (current.fileIsHex && current.fileValue) {
+        const ok = await workerProxy.restoreWallet(current.password, "hex", current.fileValue)
+        if (ok === "true") {
+          clearIndexedDB()
+          goBack()
+        } else {
+          setState((prev) => ({ ...prev, incorrectKeyFile: true }))
+        }
+        return
+      }
+
+      if (current.fileIsJSON && current.fileValue) {
+        const ok = await workerProxy.restoreWallet(current.password, "json", current.fileValue)
+        if (ok === "true") {
+          clearIndexedDB()
+          goBack()
+        } else {
+          setState((prev) => ({ ...prev, incorrectKeyFile: true }))
+        }
+        return
+      }
+
+      if (current.seed) {
+        await workerProxy.restoreWallet(current.password, "seed", current.seed)
+        clearIndexedDB()
+        goBack()
+      }
+    },
+    [clearIndexedDB, goBack, isValid, state, workerProxy]
+  )
+
+  const handleFileChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files
+      if (files && files.length) {
+        checkFile(files[0])
+        return
+      }
+      setState((prev) => ({ ...prev, fileError: "", fileIsHex: false, fileIsJSON: false, incorrectKeyFile: false }))
+    },
+    [checkFile]
+  )
+
+  return (
+    <Box>
+      <Button variant="subtle" onClick={goBack} mb="sm">
+        {"<-"} Restore a Wallet
+      </Button>
+      <Container size={520}>
+        <Paper withBorder p="md" radius="md">
+          <form onSubmit={handleSubmit}>
+            <Stack gap="sm">
+              {state.incorrectKeyFile ? <Text c="red">Incorrect key file</Text> : null}
+              <Stack gap={4}>
+                {state.fileIsHex || state.fileIsJSON ? null : (
+                  <Textarea placeholder="Seed Phrase" rows={3} error={state.seedError} onChange={(ev) => setValue({ seed: ev.target.value })} />
+                )}
+                {state.fileIsHex || state.fileIsJSON ? null : state.seedError ? (
+                  <Text c="red" size="sm">
+                    {state.seedError}
+                  </Text>
+                ) : (
+                  <Text c="dimmed" size="sm">
+                    Enter a valid BIP39 seed phrase
+                  </Text>
+                )}
+                <Group justify="flex-end">
+                  {state.fileIsHex ? (
+                    <Text c="dimmed" size="sm">
+                      And now set the password
+                    </Text>
+                  ) : state.fileIsJSON ? (
+                    <Text c="dimmed" size="sm">
+                      And now set the password for unlocking
+                    </Text>
+                  ) : (
+                    <Anchor onClick={clickInpFile}>Select private key file</Anchor>
+                  )}
+                </Group>
+              </Stack>
+              {state.fileError ? (
+                <Text c="red" size="sm">
+                  {state.fileError}
+                </Text>
+              ) : null}
+              <input type="file" id="inpFilePrivKey" style={{ display: "none" }} onChange={handleFileChange} />
+              <Stack gap={4}>
+                <PasswordInput
+                  placeholder="Password"
+                  autoComplete="new-password"
+                  error={state.passwordError}
+                  onChange={(ev) => setValue({ password: ev.target.value })}
+                />
+                {state.passwordError ? (
+                  <Text c="red" size="sm">
+                    {state.passwordError}
+                  </Text>
+                ) : (
+                  <Text c="dimmed" size="sm">
+                    At least {MINIMUM_PASSWORD_LENGTH} characters
+                  </Text>
+                )}
+              </Stack>
+              <Stack gap={4}>
+                <PasswordInput
+                  placeholder="Password Confirmation"
+                  autoComplete="new-password"
+                  error={state.passwordConfirmationError}
+                  onChange={(ev) => setValue({ passwordConfirmation: ev.target.value })}
+                />
+                {state.passwordConfirmationError ? (
+                  <Text c="red" size="sm">
+                    {state.passwordConfirmationError}
+                  </Text>
+                ) : (
+                  <Text size="sm">&nbsp;</Text>
+                )}
+              </Stack>
+              <Button type="submit">Restore</Button>
+            </Stack>
+          </form>
+        </Paper>
+      </Container>
+      {showVerifiable ? (
+        <Button variant="light" size="xs" onClick={showVerifiable} style={{ position: "fixed", right: 12, bottom: 12 }}>
+          Security
+        </Button>
+      ) : null}
+    </Box>
+  )
 }
-
-function mapStateToProps (state: FrameState, props: OwnRestorePageProps): RestorePageStateProps & OwnRestorePageProps {
-  return {
-    workerProxy: state.temp.workerProxy,
-    showVerifiable: props.showVerifiable
-  }
-}
-
-export default connect(mapStateToProps)(RestorePage)

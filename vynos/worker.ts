@@ -1,15 +1,21 @@
-import { asServiceWorker } from './worker/window'
-import BackgroundController from './worker/controllers/BackgroundController'
-import { default as StreamServer, Handler as StreamServerHandler } from './lib/StreamServer'
-import ServiceWorkerStream from './lib/ServiceWorkerStream'
-import BackgroundHandler from './worker/controllers/BackgroundHandler'
-import NetworkController from './worker/controllers/NetworkController'
-import MicropaymentsHandler from './worker/controllers/MicropaymentsHandler'
-import MicropaymentsController from './worker/controllers/MicropaymentsController'
-import TransactionService from './worker/TransactionService'
-import IncomingTransactionService from './worker/IncomingTransactionService'
+import { asServiceWorker } from "./worker/window"
+import { Buffer } from "buffer/"
+import BackgroundController from "./worker/controllers/BackgroundController"
+import { default as StreamServer, Handler as StreamServerHandler } from "./lib/StreamServer"
+import ServiceWorkerStream from "./lib/ServiceWorkerStream"
+import BackgroundHandler from "./worker/controllers/BackgroundHandler"
+import NetworkController from "./worker/controllers/NetworkController"
+import MicropaymentsHandler from "./worker/controllers/MicropaymentsHandler"
+import MicropaymentsController from "./worker/controllers/MicropaymentsController"
+import TransactionService from "./worker/TransactionService"
+import IncomingTransactionService from "./worker/IncomingTransactionService"
 
-asServiceWorker(self => {
+const globalWithBuffer = globalThis as unknown as { Buffer?: typeof Buffer }
+if (!globalWithBuffer.Buffer) {
+  globalWithBuffer.Buffer = Buffer
+}
+
+asServiceWorker((self) => {
   let backgroundController = new BackgroundController()
   let transactionService = new TransactionService(backgroundController.store)
   let networkController = new NetworkController(backgroundController, transactionService)
@@ -20,14 +26,14 @@ asServiceWorker(self => {
   backgroundController.setTransactionService(transactionService)
 
   let background = new BackgroundHandler(backgroundController)
-  let server = new StreamServer('Worker', true)
+  let server = new StreamServer("Worker", true)
     .add(background.handler as StreamServerHandler)
     .add(micropaymentsHandler.handler as StreamServerHandler)
     .add(networkController.handler as StreamServerHandler)
 
   let stream = new ServiceWorkerStream({
-    sourceName: 'worker',
-    targetName: 'frame',
+    sourceName: "worker",
+    targetName: "frame",
     source: self
   })
   stream.pipe(server).pipe(stream)
@@ -35,11 +41,11 @@ asServiceWorker(self => {
   background.broadcastBuyProcessEvent(stream)
   background.broadcastOnDisplayRequest(stream)
 
-  self.oninstall = event => {
+  self.oninstall = (event) => {
     event.waitUntil(self.skipWaiting())
   }
 
-  self.onactivate = event => {
+  self.onactivate = (event) => {
     event.waitUntil(self.clients.claim())
   }
 

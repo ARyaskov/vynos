@@ -1,25 +1,26 @@
-import { JSONRPC, RequestPayload, ResponsePayload } from '../Payload'
-import { SharedState, Preferences } from '../../worker/WorkerState'
-import { SerializedPaymentChannel } from 'machinomy/lib/PaymentChannel'
-import VynosBuyResponse from '../VynosBuyResponse'
-import PurchaseMeta from '../PurchaseMeta'
+import { JSONRPC, RequestPayload, ResponsePayload } from "../Payload"
+import { SharedState, Preferences } from "../../worker/WorkerState"
+import VynosBuyResponse from "../VynosBuyResponse"
+import PurchaseMeta from "../PurchaseMeta"
+
+import type { SerializedPaymentChannel } from "../paymentChannel"
 
 export class InitAccountRequest implements RequestPayload {
-  static method = 'yns_initAccount'
+  static method = "yns_initAccount"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof InitAccountRequest.method
-  params: any[]
+  params: unknown[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is InitAccountRequest {
+  static match(payload: RequestPayload): payload is InitAccountRequest {
     return payload.method === InitAccountRequest.method
   }
 }
@@ -29,21 +30,21 @@ export interface InitAccountResponse extends ResponsePayload {
 }
 
 export class GetSharedStateRequest implements RequestPayload {
-  static method: string = 'yns_getSharedState'
+  static method: string = "yns_getSharedState"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof GetSharedStateRequest.method
-  params: any[]
+  params: unknown[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is GetSharedStateRequest {
+  static match(payload: RequestPayload): payload is GetSharedStateRequest {
     return payload.method === GetSharedStateRequest.method
   }
 }
@@ -53,21 +54,21 @@ export interface GetSharedStateResponse extends ResponsePayload {
 }
 
 export class DidStoreMnemonicRequest implements RequestPayload {
-  static method: string = 'yns_didStoreMnemonic'
+  static method: string = "yns_didStoreMnemonic"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof DidStoreMnemonicRequest.method
-  params: any[]
+  params: unknown[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is DidStoreMnemonicRequest {
+  static match(payload: RequestPayload): payload is DidStoreMnemonicRequest {
     return payload.method === DidStoreMnemonicRequest.method
   }
 }
@@ -77,21 +78,21 @@ export interface DidStoreMnemonicResponse extends ResponsePayload {
 }
 
 export class RememberPageRequest implements RequestPayload {
-  static method: string = 'yns_rememberPage'
+  static method: string = "yns_rememberPage"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof RememberPageRequest.method
   params: [string]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is RememberPageRequest {
+  static match(payload: RequestPayload): payload is RememberPageRequest {
     return payload.method === RememberPageRequest.method
   }
 }
@@ -101,21 +102,21 @@ export interface RememberPageResponse extends ResponsePayload {
 }
 
 export class GenKeyringRequest implements RequestPayload {
-  static method = 'yns_genKeyring'
+  static method = "yns_genKeyring"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof GenKeyringRequest.method
   params: string[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is GenKeyringRequest {
+  static match(payload: RequestPayload): payload is GenKeyringRequest {
     return payload.method === GenKeyringRequest.method
   }
 }
@@ -127,21 +128,21 @@ export interface GenKeyringResponse extends ResponsePayload {
 // RestoreWalletRequest
 
 export class RestoreWalletRequest implements RequestPayload {
-  static method = 'yns_restoreWallet'
+  static method = "yns_restoreWallet"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof RestoreWalletRequest.method
   params: [string, string, string]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['', '', '']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = ["", "", ""]
   }
 
-  static match (payload: RequestPayload): payload is RestoreWalletRequest {
+  static match(payload: RequestPayload): payload is RestoreWalletRequest {
     return payload.method === RestoreWalletRequest.method
   }
 }
@@ -151,21 +152,21 @@ export interface RestoreWalletResponse extends ResponsePayload {
 }
 
 export class UnlockWalletRequest implements RequestPayload {
-  static method = 'yns_unlockWallet'
+  static method = "yns_unlockWallet"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof UnlockWalletRequest.method
   params: string[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is UnlockWalletRequest {
+  static match(payload: RequestPayload): payload is UnlockWalletRequest {
     return payload.method === UnlockWalletRequest.method
   }
 }
@@ -176,21 +177,21 @@ export interface UnlockWalletResponse extends ResponsePayload {
 }
 
 export class LockWalletRequest implements RequestPayload {
-  static method = 'yns_lockWallet'
+  static method = "yns_lockWallet"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof LockWalletRequest.method
   params: string[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is LockWalletRequest {
+  static match(payload: RequestPayload): payload is LockWalletRequest {
     return payload.method === LockWalletRequest.method
   }
 }
@@ -200,21 +201,21 @@ export interface LockWalletResponse extends ResponsePayload {
 }
 
 export class OpenChannelRequest implements RequestPayload {
-  static method = 'yns_openChannel'
+  static method = "yns_openChannel"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof OpenChannelRequest.method
   params: [string, string]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['', '']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = ["", ""]
   }
 
-  static match (payload: RequestPayload): payload is OpenChannelRequest {
+  static match(payload: RequestPayload): payload is OpenChannelRequest {
     return payload.method === OpenChannelRequest.method
   }
 }
@@ -224,21 +225,21 @@ export interface OpenChannelResponse extends ResponsePayload {
 }
 
 export class CloseChannelRequest implements RequestPayload {
-  static method = 'yns_closeChannel'
+  static method = "yns_closeChannel"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof CloseChannelRequest.method
   params: [string]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is CloseChannelRequest {
+  static match(payload: RequestPayload): payload is CloseChannelRequest {
     return payload.method === CloseChannelRequest.method
   }
 }
@@ -248,48 +249,55 @@ export interface CloseChannelResponse extends ResponsePayload {
 }
 
 export class BuyRequest implements RequestPayload {
-  static method = 'yns_buyRequest'
+  static method = "yns_buyRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof BuyRequest.method
   params: [string, number, string, string, PurchaseMeta, number, string]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['', -1, '', '',
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [
+      "",
+      -1,
+      "",
+      "",
       {
-        title: '',
-        description: '',
-        siteName: '',
-        url: '',
-        origin: ''
-      }, -1, '']
+        title: "",
+        description: "",
+        siteName: "",
+        url: "",
+        origin: ""
+      },
+      -1,
+      ""
+    ]
   }
 
-  static match (payload: RequestPayload): payload is BuyRequest {
+  static match(payload: RequestPayload): payload is BuyRequest {
     return payload.method === BuyRequest.method
   }
 }
 
 export class TransactonResolved implements RequestPayload {
-  static method = 'yns_transactionResolved'
+  static method = "yns_transactionResolved"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof TransactonResolved.method
   params: never[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = []
   }
 
-  static match (payload: RequestPayload): payload is TransactonResolved {
+  static match(payload: RequestPayload): payload is TransactonResolved {
     return payload.method === TransactonResolved.method
   }
 }
@@ -299,21 +307,21 @@ export interface BuyResponse extends ResponsePayload {
 }
 
 export class ListChannelsRequest implements RequestPayload {
-  static method = 'yns_listChannels'
+  static method = "yns_listChannels"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof ListChannelsRequest.method
-  params: any[]
+  params: unknown[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is ListChannelsRequest {
+  static match(payload: RequestPayload): payload is ListChannelsRequest {
     return payload.method === ListChannelsRequest.method
   }
 }
@@ -323,21 +331,21 @@ export interface ListChannelsResponse extends ResponsePayload {
 }
 
 export class ChangeNetworkRequest implements RequestPayload {
-  static method: string = 'yns_ChangeNetwork'
+  static method: string = "yns_ChangeNetwork"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof ChangeNetworkRequest.method
-  params: any[]
+  params: unknown[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is ChangeNetworkRequest {
+  static match(payload: RequestPayload): payload is ChangeNetworkRequest {
     return payload.method === ChangeNetworkRequest.method
   }
 }
@@ -347,21 +355,21 @@ export interface ChangeNetworkResponse extends ResponsePayload {
 }
 
 export class GetPrivateKeyHexRequest implements RequestPayload {
-  static method = 'yns_getPrivateKeyHex'
+  static method = "yns_getPrivateKeyHex"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof GetPrivateKeyHexRequest.method
   params: never[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = []
   }
 
-  static match (payload: RequestPayload): payload is GetPrivateKeyHexRequest {
+  static match(payload: RequestPayload): payload is GetPrivateKeyHexRequest {
     return payload.method === GetPrivateKeyHexRequest.method
   }
 }
@@ -371,27 +379,28 @@ export interface GetPrivateKeyHexResponse extends ResponsePayload {
 }
 
 export class SetPreferencesRequest implements RequestPayload {
-  static method = 'yns_setPreferences'
+  static method = "yns_setPreferences"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof SetPreferencesRequest.method
   params: [Preferences]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = [
       {
         micropaymentThreshold: -1,
-        micropaymentThrottlingHumanReadable: '',
-        currency: ''
+        micropaymentThrottlingHumanReadable: "",
+        currency: "",
+        theme: "light"
       }
     ]
   }
 
-  static match (payload: RequestPayload): payload is SetPreferencesRequest {
+  static match(payload: RequestPayload): payload is SetPreferencesRequest {
     return payload.method === SetPreferencesRequest.method
   }
 }
@@ -401,21 +410,21 @@ export interface SetPreferencesResponse extends ResponsePayload {
 }
 
 export class SetApproveByIdRequest implements RequestPayload {
-  static method: string = 'yns_setApproveByIdRequest'
+  static method: string = "yns_setApproveByIdRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof SetApproveByIdRequest.method
   params: [string]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is SetApproveByIdRequest {
+  static match(payload: RequestPayload): payload is SetApproveByIdRequest {
     return payload.method === SetApproveByIdRequest.method
   }
 }
@@ -425,21 +434,21 @@ export interface SetApproveByIdResponse extends ResponsePayload {
 }
 
 export class SetRejectByIdRequest implements RequestPayload {
-  static method: string = 'yns_setRejectByIdRequest'
+  static method: string = "yns_setRejectByIdRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof SetRejectByIdRequest.method
   params: [string]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
-    this.params = ['']
+    this.jsonrpc = ""
+    this.method = ""
+    this.params = [""]
   }
 
-  static match (payload: RequestPayload): payload is SetRejectByIdRequest {
+  static match(payload: RequestPayload): payload is SetRejectByIdRequest {
     return payload.method === SetRejectByIdRequest.method
   }
 }
@@ -449,21 +458,21 @@ export interface SetRejectByIdResponse extends ResponsePayload {
 }
 
 export class ClearTransactionMetastorageRequest implements RequestPayload {
-  static method = 'yns_clearTransactionMetastorageRequest'
+  static method = "yns_clearTransactionMetastorageRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof ClearTransactionMetastorageRequest.method
   params: never[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = []
   }
 
-  static match (payload: RequestPayload): payload is ClearTransactionMetastorageRequest {
+  static match(payload: RequestPayload): payload is ClearTransactionMetastorageRequest {
     return payload.method === ClearTransactionMetastorageRequest.method
   }
 }
@@ -473,21 +482,21 @@ export interface ClearTransactionMetastorageResponse extends ResponsePayload {
 }
 
 export class ClearChannelMetastorageRequest implements RequestPayload {
-  static method = 'yns_clearChannelMetastorageRequest'
+  static method = "yns_clearChannelMetastorageRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof ClearChannelMetastorageRequest.method
   params: never[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = []
   }
 
-  static match (payload: RequestPayload): payload is ClearChannelMetastorageRequest {
+  static match(payload: RequestPayload): payload is ClearChannelMetastorageRequest {
     return payload.method === ClearChannelMetastorageRequest.method
   }
 }
@@ -497,21 +506,21 @@ export interface ClearChannelMetastorageResponse extends ResponsePayload {
 }
 
 export class ClearReduxPersistentStorageRequest implements RequestPayload {
-  static method = 'yns_clearReduxPersistentStorageRequest'
+  static method = "yns_clearReduxPersistentStorageRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof ClearReduxPersistentStorageRequest.method
   params: never[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = []
   }
 
-  static match (payload: RequestPayload): payload is ClearReduxPersistentStorageRequest {
+  static match(payload: RequestPayload): payload is ClearReduxPersistentStorageRequest {
     return payload.method === ClearReduxPersistentStorageRequest.method
   }
 }
@@ -520,46 +529,46 @@ export interface ClearReduxPersistentStorageResponse extends ResponsePayload {
   result: null
 }
 
-export class ClearMachinomyStorageRequest implements RequestPayload {
-  static method = 'yns_clearMachinomyStorageRequest'
+export class ClearChannelStorageRequest implements RequestPayload {
+  static method = "yns_clearChannelStorageRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
-  method: typeof ClearMachinomyStorageRequest.method
+  method: typeof ClearChannelStorageRequest.method
   params: never[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = []
   }
 
-  static match (payload: RequestPayload): payload is ClearMachinomyStorageRequest {
-    return payload.method === ClearMachinomyStorageRequest.method
+  static match(payload: RequestPayload): payload is ClearChannelStorageRequest {
+    return payload.method === ClearChannelStorageRequest.method
   }
 }
 
-export interface ClearMachinomyStorageResponse extends ResponsePayload {
+export interface ClearChannelStorageResponse extends ResponsePayload {
   result: null
 }
 
 export class ClearAccountInfoRequest implements RequestPayload {
-  static method = 'yns_clearAccountInfoRequest'
+  static method = "yns_clearAccountInfoRequest"
 
   id: number
   jsonrpc: typeof JSONRPC
   method: typeof ClearAccountInfoRequest.method
   params: never[]
 
-  constructor () {
+  constructor() {
     this.id = -1
-    this.jsonrpc = ''
-    this.method = ''
+    this.jsonrpc = ""
+    this.method = ""
     this.params = []
   }
 
-  static match (payload: RequestPayload): payload is ClearAccountInfoRequest {
+  static match(payload: RequestPayload): payload is ClearAccountInfoRequest {
     return payload.method === ClearAccountInfoRequest.method
   }
 }

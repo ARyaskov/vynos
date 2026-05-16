@@ -1,6 +1,6 @@
-import { INITIAL_SHARED_STATE, SharedState } from '../../worker/WorkerState'
-import WorkerProxy from '../WorkerProxy'
-import { RouterState } from 'react-router-redux'
+import { INITIAL_SHARED_STATE, SharedState } from "../../worker/WorkerState"
+import WorkerProxy from "../WorkerProxy"
+import { MenuState } from "./menu"
 
 export interface InitPageState {
   didAcceptTerms: boolean
@@ -15,10 +15,10 @@ export interface TempState {
 export interface FrameState {
   temp: TempState
   shared: SharedState
-  router: RouterState
+  menu: MenuState
 }
 
-export function initialState (workerProxy: WorkerProxy): FrameState {
+export function initialState(workerProxy: WorkerProxy): FrameState {
   return {
     temp: {
       initPage: {
@@ -27,9 +27,12 @@ export function initialState (workerProxy: WorkerProxy): FrameState {
       },
       workerProxy: workerProxy
     },
-    router: {
-      location: null
-    },
-    shared: INITIAL_SHARED_STATE
+    shared: INITIAL_SHARED_STATE,
+    menu: {
+      topmenu: {
+        currentMenuItem: "Wallet",
+        submenuShowState: ""
+      }
+    }
   }
 }
